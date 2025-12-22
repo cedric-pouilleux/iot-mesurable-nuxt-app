@@ -5,10 +5,11 @@ export default defineConfig({
     input: 'http://localhost:3001/documentation/json',
     output: {
       mode: 'split',
-      target: 'app/utils/api.ts',
-      schemas: 'app/utils/model',
+      target: 'app/api/client.ts',
+      schemas: 'app/api/model',
       client: 'fetch',
       baseUrl: 'http://localhost:3001',
     },
   },
 })
+

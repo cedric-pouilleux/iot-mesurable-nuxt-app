@@ -1,5 +1,5 @@
 import type { DeviceStatus, SensorDataPoint, DashboardSensorData } from '~/features/modules/common/types'
-import { getApiModulesIdStatus, getApiModulesIdHistory } from '~/utils/api'
+import { getApiModulesIdStatus, getApiModulesIdHistory } from '~/api/client'
 import { processSensorData } from '~/utils/data-processing'
 
 interface RawSensorDataPoint {
@@ -48,7 +48,7 @@ export const useDashboard = () => {
 
       // Dynamically process all sensor keys
       const result: Record<string, SensorDataPoint[]> = {}
-      
+
       Object.entries(sensors).forEach(([key, values]) => {
         if (isSensorDataArray(values)) {
           result[key] = processSensorData(values)
