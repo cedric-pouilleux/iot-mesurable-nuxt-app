@@ -1,67 +1,50 @@
 <template>
-  <Transition name="slide-panel">
     <div v-if="selectedSensor" class="mt-5">
-      <!-- Panel -->
-      <div class="bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
-        <!-- Header -->
-        <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 relative z-10">
-          <div class="flex items-center justify-between">
-            <!-- Title + Sensor chips (grouped together) -->
-            <div class="flex items-center gap-3 flex-wrap">
-              <!-- Title -->
-              <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full" :style="{ backgroundColor: dynamicColor }"></span>
-                <span class="font-semibold text-gray-700 dark:text-white text-sm">{{ dynamicTitle }}</span>
-              </div>
+      <SensorCardOpen
+        :title="dynamicTitle"
+        :color="dynamicColor"
+        @close="$emit('close')"
+      >
+        <template #header-extra>
+          <div v-if="enabledSensors && enabledSensors.length > 1" class="inline-flex items-stretch rounded bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700">
+            <template v-for="(sensor, index) in enabledSensors" :key="sensor.key">
+              <!-- Separator -->
+              <div 
+                v-if="index > 0" 
+                class="w-[1px] h-3/5 bg-gray-200 dark:bg-gray-700 self-center"
+              ></div>
               
-              <!-- Sensor selector chips -->
-              <div v-if="enabledSensors && enabledSensors.length > 1" class="flex flex-wrap gap-1.5">
-                <button
-                  v-for="(sensor, index) in enabledSensors"
-                  :key="sensor.key"
-                  @click="toggleSensor(sensor.key)"
-                  class="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-all cursor-pointer"
-                  :class="selectedSensorKeys.has(sensor.key) 
-                    ? 'bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-white' 
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'"
-                >
-                  <span 
-                    class="w-2 h-2 rounded-full" 
-                    :style="{ backgroundColor: getSensorShadeColor(index) }"
-                  ></span>
-                  {{ getSensorDisplayLabel(sensor) }}
-                </button>
-              </div>
-            </div>
-            
-            <!-- Close button -->
-            <button 
-              @click="$emit('close')"
-              class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors shrink-0 cursor-pointer"
-              title="Fermer"
-            >
-              <Icon name="tabler:x" class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-        
-        <!-- Chart -->
-        <div class="h-80 w-full relative p-4">
-          <ClientOnly>
-            <Line v-if="chartData" :data="chartData" :options="chartOptions" />
-            <template #fallback>
-              <div class="h-full flex items-center justify-center text-[10px] text-gray-300">
-                Chargement...
-              </div>
+              <button
+                @click="toggleSensor(sensor.key)"
+                class="px-2 py-0.5 text-[10px] font-medium transition-colors cursor-pointer h-full flex items-center gap-1.5 select-none"
+                :class="selectedSensorKeys.has(sensor.key) 
+                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' 
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
+                :title="getSensorDisplayLabel(sensor)"
+              >
+                <span 
+                  class="w-1.5 h-1.5 rounded-full" 
+                  :style="{ backgroundColor: getSensorShadeColor(index) }"
+                ></span>
+                {{ getSensorDisplayLabel(sensor) }}
+              </button>
             </template>
-          </ClientOnly>
-          <div v-if="!hasHistory" class="h-full flex items-center justify-center text-gray-400">
-            Pas assez de données pour afficher le graphique détaillé.
           </div>
+        </template>
+        
+        <ClientOnly>
+          <Line v-if="chartData" :data="chartData" :options="chartOptions" />
+          <template #fallback>
+            <div class="h-full flex items-center justify-center text-[10px] text-gray-300">
+              Chargement...
+            </div>
+          </template>
+        </ClientOnly>
+        <div v-if="!hasHistory" class="h-full flex items-center justify-center text-gray-400">
+          Pas assez de données pour afficher le graphique détaillé.
         </div>
-      </div>
+      </SensorCardOpen>
     </div>
-  </Transition>
 </template>
 
 <script setup lang="ts">
@@ -80,6 +63,7 @@ import {
 import { Line } from 'vue-chartjs'
 import 'chartjs-adapter-date-fns'
 import { getSensorRange, getNormalizationRatio } from '../config/sensors'
+import SensorCardOpen from './SensorCardOpen.vue'
 
 if (process.client) {
   ChartJS.register(
@@ -506,20 +490,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
 </script>
 
 <style scoped>
-/* Panel slides: starts fast, slows at the end */
-.slide-panel-enter-active {
-  transition: all 0.35s cubic-bezier(0, 0, 0.2, 1);
-}
 
-.slide-panel-leave-active {
-  transition: all 0.25s cubic-bezier(0.4, 0, 1, 1);
-}
-
-.slide-panel-enter-from,
-.slide-panel-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
 
 /* Shadow separator top (inverted - shadow goes down) */
 .shadow-separator-top {

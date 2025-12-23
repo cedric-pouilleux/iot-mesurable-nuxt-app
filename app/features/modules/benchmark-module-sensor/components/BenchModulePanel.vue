@@ -66,18 +66,21 @@
       </div>
 
       <!-- Detailed Graph Overlay with multi-sensor support -->
-      <SensorDetailGraph
-        v-if="selectedGraphSensor"
-        :selected-sensor="selectedGraphSensor"
-        :initial-active-sensor="selectedGraphActiveSensor"
-        :history="getSensorHistory(selectedGraphSensor)"
-        :sensor-label="selectedGraphGroup?.label || getSensorLabel(selectedGraphSensor)"
-        :sensor-color="getSensorColor(selectedGraphSensor)"
-        :sensor-unit="getSensorUnit(selectedGraphSensor)"
-        :available-sensors="selectedGraphAvailableSensors"
-        :sensor-history-map="selectedGraphHistoryMap"
-        @close="selectedGraphSensor = null"
-      />
+      <!-- Detailed Graph Overlay with multi-sensor support -->
+      <Transition name="slide-panel">
+        <SensorDetailGraph
+          v-if="selectedGraphSensor"
+          :selected-sensor="selectedGraphSensor"
+          :initial-active-sensor="selectedGraphActiveSensor"
+          :history="getSensorHistory(selectedGraphSensor)"
+          :sensor-label="selectedGraphGroup?.label || getSensorLabel(selectedGraphSensor)"
+          :sensor-color="getSensorColor(selectedGraphSensor)"
+          :sensor-unit="getSensorUnit(selectedGraphSensor)"
+          :available-sensors="selectedGraphAvailableSensors"
+          :sensor-history-map="selectedGraphHistoryMap"
+          @close="selectedGraphSensor = null"
+        />
+      </Transition>
     </template>
   </div>
 </template>
@@ -384,6 +387,21 @@ const calculatedUptime = computed(() => {
 /* Options panel - simple linear transition */
 .options-panel-transition {
   transition: all 0.3s linear;
+}
+
+/* Panel slides: simple fade up */
+.slide-panel-enter-active {
+  transition: all 0.4s ease-out;
+}
+
+.slide-panel-leave-active {
+  transition: all 0.3s ease-in;
+}
+
+.slide-panel-enter-from,
+.slide-panel-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
 }
 </style>
 
