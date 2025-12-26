@@ -5,14 +5,17 @@
 
     <!-- Tooltip Bubble -->
     <div
-      class="absolute z-50 px-2 py-1 text-[10px] font-medium text-white bg-gray-900 dark:bg-gray-700 rounded shadow-lg whitespace-nowrap pointer-events-none transition-all duration-300 ease-out opacity-0 blur-sm"
+      class="absolute z-50 px-2 py-1 text-[10px] font-medium text-white bg-gray-900 dark:bg-gray-700 rounded shadow-lg pointer-events-none transition-all duration-300 ease-out opacity-0 blur-sm"
       :class="[
         positionClasses,
         widthClass,
+        multiline ? 'whitespace-pre-wrap' : 'whitespace-nowrap',
         'group-hover:opacity-100 group-hover:blur-0'
       ]"
     >
-      {{ text }}
+      <slot name="content">
+        {{ text }}
+      </slot>
       
       <!-- Caret / Arrow -->
       <div 
@@ -29,10 +32,12 @@ import { computed } from 'vue'
 type Position = 'top' | 'bottom' | 'left' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
 
 const props = withDefaults(defineProps<{
-  text: string
+  text?: string
   width?: string
   position?: Position
+  multiline?: boolean
 }>(), {
+  text: '',
   width: '',
   position: 'top'
 })
