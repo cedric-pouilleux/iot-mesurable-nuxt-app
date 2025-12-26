@@ -6,29 +6,78 @@
         @close="$emit('close')"
       >
         <template #header-extra>
-          <div v-if="enabledSensors && enabledSensors.length > 1" class="inline-flex items-stretch rounded bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700">
-            <template v-for="(sensor, index) in enabledSensors" :key="sensor.key">
-              <!-- Separator -->
-              <div 
-                v-if="index > 0" 
-                class="w-[1px] h-3/5 bg-gray-200 dark:bg-gray-700 self-center"
-              ></div>
-              
-              <button
-                @click="toggleSensor(sensor.key)"
-                class="px-2 py-0.5 text-[10px] font-medium transition-colors cursor-pointer h-full flex items-center gap-1.5 select-none"
-                :class="selectedSensorKeys.has(sensor.key) 
-                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' 
-                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
-                :title="getSensorDisplayLabel(sensor)"
-              >
-                <span 
-                  class="w-1.5 h-1.5 rounded-full" 
-                  :style="{ backgroundColor: getSensorShadeColor(index) }"
-                ></span>
-                {{ getSensorDisplayLabel(sensor) }}
-              </button>
-            </template>
+          <div class="flex items-center gap-3">
+            <!-- Sensor selector chips -->
+            <div v-if="enabledSensors && enabledSensors.length > 1" class="inline-flex items-stretch rounded bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700">
+              <template v-for="(sensor, index) in enabledSensors" :key="sensor.key">
+                <!-- Separator -->
+                <div 
+                  v-if="index > 0" 
+                  class="w-[1px] h-3/5 bg-gray-200 dark:bg-gray-700 self-center"
+                ></div>
+                
+                <button
+                  @click="toggleSensor(sensor.key)"
+                  class="px-2 py-0.5 text-[10px] font-medium transition-colors cursor-pointer h-full flex items-center gap-1.5 select-none"
+                  :class="selectedSensorKeys.has(sensor.key) 
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' 
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
+                  :title="getSensorDisplayLabel(sensor)"
+                >
+                  <span 
+                    class="w-1.5 h-1.5 rounded-full" 
+                    :style="{ backgroundColor: getSensorShadeColor(index) }"
+                  ></span>
+                  {{ getSensorDisplayLabel(sensor) }}
+                </button>
+              </template>
+            </div>
+
+            <!-- Auto-zoom toggle -->
+            <button
+              @click="autoZoom = !autoZoom"
+              class="inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-medium rounded transition-colors cursor-pointer select-none border"
+              :class="autoZoom 
+                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700' 
+                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
+              title="Adapter l'échelle aux données"
+            >
+              <Icon name="tabler:zoom-in-area" class="w-3.5 h-3.5" />
+              Auto-zoom
+            </button>
+
+            <!-- Smoothing toggle -->
+            <button
+              @click="smoothingEnabled = !smoothingEnabled"
+              class="inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-medium rounded transition-colors cursor-pointer select-none border"
+              :class="smoothingEnabled 
+                ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700' 
+                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
+              title="Lisser les courbes pour atténuer les pics"
+            >
+              <Icon name="tabler:wave-sine" class="w-3.5 h-3.5" />
+              Lissage
+            </button>
+
+            <!-- Time range selector -->
+            <div class="inline-flex items-stretch rounded bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700">
+              <template v-for="(option, index) in durationOptions" :key="option.value">
+                <div 
+                  v-if="index > 0" 
+                  class="w-[1px] h-3/5 bg-gray-200 dark:bg-gray-700 self-center"
+                ></div>
+                <button
+                  @click="selectedDuration = option.value"
+                  class="px-2 py-0.5 text-[10px] font-medium transition-colors cursor-pointer h-full flex items-center select-none"
+                  :class="selectedDuration === option.value 
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' 
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
+                  :title="option.label"
+                >
+                  {{ option.label }}
+                </button>
+              </template>
+            </div>
           </div>
         </template>
         
@@ -119,6 +168,82 @@ const enabledSensors = computed(() =>
 
 // State for multi-sensor selection
 const selectedSensorKeys = ref<Set<string>>(new Set())
+
+// Auto-zoom state: when enabled, Y-axis adapts to data range instead of fixed range
+const autoZoom = ref(false)
+
+// Duration options for time range selector
+const durationOptions = [
+  { value: '1h', label: '1h', hours: 1 },
+  { value: '6h', label: '6h', hours: 6 },
+  { value: '24h', label: '24h', hours: 24 },
+  { value: '7d', label: '7j', hours: 168 },
+]
+
+// Selected duration state (defaults to 24h)
+const selectedDuration = ref('24h')
+
+// Get hours from selected duration
+const selectedDurationHours = computed(() => {
+  const option = durationOptions.find(o => o.value === selectedDuration.value)
+  return option?.hours || 24
+})
+
+// Filter data by selected duration
+const filterByDuration = (data: SensorDataPoint[]): SensorDataPoint[] => {
+  if (!data || data.length === 0) return []
+  
+  const now = Date.now()
+  const cutoffMs = now - (selectedDurationHours.value * 60 * 60 * 1000)
+  
+  return data.filter(point => {
+    const pointTime = point.time instanceof Date ? point.time.getTime() : new Date(point.time).getTime()
+    return pointTime >= cutoffMs
+  })
+}
+
+// Smoothing state: when enabled, applies moving average to smooth out spikes
+const smoothingEnabled = ref(false)
+
+// Smoothing window size based on duration (more points for longer durations)
+const smoothingWindowSize = computed(() => {
+  const hours = selectedDurationHours.value
+  if (hours <= 1) return 3      // 1h: small window
+  if (hours <= 6) return 5      // 6h: medium window  
+  if (hours <= 24) return 7     // 24h: larger window
+  return 11                     // 7d: largest window
+})
+
+// Apply moving average smoothing to data
+const applySmoothing = (data: SensorDataPoint[]): SensorDataPoint[] => {
+  if (!smoothingEnabled.value || data.length < 3) return data
+  
+  const windowSize = smoothingWindowSize.value
+  const halfWindow = Math.floor(windowSize / 2)
+  
+  return data.map((point, index) => {
+    // Calculate window bounds
+    const start = Math.max(0, index - halfWindow)
+    const end = Math.min(data.length - 1, index + halfWindow)
+    
+    // Calculate average of values in window
+    let sum = 0
+    let count = 0
+    for (let i = start; i <= end; i++) {
+      if (data[i].value !== null && data[i].value !== undefined) {
+        sum += data[i].value
+        count++
+      }
+    }
+    
+    const smoothedValue = count > 0 ? sum / count : point.value
+    
+    return {
+      ...point,
+      value: smoothedValue
+    }
+  })
+}
 
 // Initialize with the active sensor from the card (or fallback to primary sensor)
 watch(() => [props.selectedSensor, props.initialActiveSensor] as const, ([selected, initial]) => {
@@ -240,8 +365,48 @@ const dynamicColor = computed(() => {
 
 const hasHistory = computed(() => props.history && props.history.length >= 2)
 
+// Collect all data values for dynamic range calculation (uses filtered data)
+const allDataValues = computed(() => {
+  const values: number[] = []
+  
+  // Multi-sensor mode
+  if (props.sensorHistoryMap && Object.keys(props.sensorHistoryMap).length > 0) {
+    for (const sensorKey of selectedSensorKeys.value) {
+      const rawHistory = props.sensorHistoryMap[sensorKey]
+      const sensorHistory = filterByDuration(rawHistory || [])
+      if (sensorHistory.length > 0) {
+        const ratio = getNormalizationRatio(sensorKey)
+        values.push(...sensorHistory.map(d => d.value / ratio).filter(v => v !== null && v !== undefined))
+      }
+    }
+  } else if (props.history) {
+    // Single sensor mode - also filter
+    const filteredHistory = filterByDuration(props.history)
+    values.push(...filteredHistory.map(d => d.value).filter(v => v !== null && v !== undefined))
+  }
+  
+  return values
+})
+
 const graphMinMax = computed(() => {
-  // Use the first selected sensor to determine the range
+  // If auto-zoom is enabled, calculate dynamic range based on actual data
+  if (autoZoom.value) {
+    const values = allDataValues.value
+    if (values.length === 0) return { min: 0, max: 100 }
+    
+    const dataMin = Math.min(...values)
+    const dataMax = Math.max(...values)
+    const range = dataMax - dataMin || 1
+    
+    // Add 5% padding on each side for better visualization
+    const padding = range * 0.05
+    return {
+      min: Math.floor(dataMin - padding),
+      max: Math.ceil(dataMax + padding),
+    }
+  }
+  
+  // Fixed range mode: use the first selected sensor to determine the range
   const firstKey = Array.from(selectedSensorKeys.value)[0]
   const sensorType = (firstKey || props.selectedSensor)?.toLowerCase() || ''
   const range = getSensorRange(sensorType)
@@ -292,8 +457,10 @@ const chartData = computed<ChartData<'line'> | null>(() => {
     const datasets = []
     
     for (const sensorKey of selectedSensorKeys.value) {
-      const sensorHistory = props.sensorHistoryMap?.[sensorKey]
-      if (!sensorHistory || sensorHistory.length < 2) continue
+      // Filter by selected duration
+      const rawHistory = props.sensorHistoryMap?.[sensorKey]
+      const sensorHistory = filterByDuration(rawHistory || [])
+      if (sensorHistory.length < 2) continue
       
       const sensor = props.availableSensors?.find(s => s.key === sensorKey)
       const color = getSensorColorByKey(sensorKey)
@@ -307,8 +474,11 @@ const chartData = computed<ChartData<'line'> | null>(() => {
         return timeA - timeB
       })
       
+      // Apply smoothing if enabled
+      const processedData = applySmoothing(sortedData)
+      
       // Apply normalization ratio to values
-      const normalizedData = sortedData.map(m => ({ 
+      const normalizedData = processedData.map(m => ({ 
         x: m.time as unknown as number, 
         y: m.value / ratio 
       }))
@@ -338,17 +508,24 @@ const chartData = computed<ChartData<'line'> | null>(() => {
   // Fallback: single sensor mode (original behavior)
   if (!hasHistory.value) return null
 
-  const sortedData = [...props.history].sort((a, b) => {
+  // Filter by selected duration for single sensor mode
+  const filteredHistory = filterByDuration(props.history)
+  if (filteredHistory.length < 2) return null
+
+  const sortedData = [...filteredHistory].sort((a, b) => {
     const timeA = a.time instanceof Date ? a.time.getTime() : new Date(a.time).getTime()
     const timeB = b.time instanceof Date ? b.time.getTime() : new Date(b.time).getTime()
     return timeA - timeB
   })
 
+  // Apply smoothing if enabled
+  const processedData = applySmoothing(sortedData)
+
   // Calculate average time gap to detect significant gaps
   const timeGaps: number[] = []
-  for (let i = 1; i < sortedData.length; i++) {
-    const t1 = sortedData[i-1].time instanceof Date ? sortedData[i-1].time.getTime() : new Date(sortedData[i-1].time).getTime()
-    const t2 = sortedData[i].time instanceof Date ? sortedData[i].time.getTime() : new Date(sortedData[i].time).getTime()
+  for (let i = 1; i < processedData.length; i++) {
+    const t1 = processedData[i-1].time instanceof Date ? processedData[i-1].time.getTime() : new Date(processedData[i-1].time).getTime()
+    const t2 = processedData[i].time instanceof Date ? processedData[i].time.getTime() : new Date(processedData[i].time).getTime()
     timeGaps.push(t2 - t1)
   }
   
@@ -358,9 +535,9 @@ const chartData = computed<ChartData<'line'> | null>(() => {
 
   // Pre-compute gap indices for segment styling
   const gapIndices = new Set<number>()
-  for (let i = 1; i < sortedData.length; i++) {
-    const t1 = sortedData[i-1].time instanceof Date ? sortedData[i-1].time.getTime() : new Date(sortedData[i-1].time).getTime()
-    const t2 = sortedData[i].time instanceof Date ? sortedData[i].time.getTime() : new Date(sortedData[i].time).getTime()
+  for (let i = 1; i < processedData.length; i++) {
+    const t1 = processedData[i-1].time instanceof Date ? processedData[i-1].time.getTime() : new Date(processedData[i-1].time).getTime()
+    const t2 = processedData[i].time instanceof Date ? processedData[i].time.getTime() : new Date(processedData[i].time).getTime()
     if (t2 - t1 > gapThreshold) {
       gapIndices.add(i - 1)
     }
@@ -373,7 +550,7 @@ const chartData = computed<ChartData<'line'> | null>(() => {
         backgroundColor: hexToRgba(props.sensorColor, 0.2),
         borderColor: props.sensorColor,
         borderWidth: 2,
-        data: sortedData.map(m => ({ x: m.time as unknown as number, y: m.value })),
+        data: processedData.map(m => ({ x: m.time as unknown as number, y: m.value })),
         tension: 0.2,
         fill: true,
         pointRadius: 0,
@@ -407,8 +584,8 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
       display: true,
       time: {
         displayFormats: {
-          minute: 'HH:mm',
-          hour: 'HH:mm',
+          minute: 'dd/MM HH:mm',
+          hour: 'dd/MM HH:mm',
           day: 'dd/MM',
           month: 'MM/yyyy'
         }

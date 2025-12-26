@@ -4,38 +4,30 @@
       :model-value="timeRange"
       @update:model-value="$emit('update:timeRange', $event)"
     />
-    
     <FilterCategory
       :model-value="filters.categories"
       @update:model-value="updateFilters({ categories: $event })"
     />
-    
     <FilterSource
       :model-value="filters.source"
       @update:model-value="updateFilters({ source: $event })"
     />
-    
     <FilterDirection
       :model-value="filters.direction"
       @update:model-value="updateFilters({ direction: $event })"
     />
-    
     <FilterLevel
       :model-value="filters.levels"
       @update:model-value="updateFilters({ levels: $event })"
     />
-    
     <FilterLimit
       :model-value="filters.limit"
       @update:model-value="updateFilters({ limit: $event })"
     />
-    
     <FilterSearch
       :model-value="filters.search"
       @update:model-value="updateFilters({ search: $event })"
     />
-
-    <!-- Delete Button -->
     <button
       @click="$emit('delete')"
       class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
