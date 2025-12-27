@@ -18,14 +18,14 @@
                 
                 <button
                   @click="toggleSensor(sensor.key)"
-                  class="px-2 py-0.5 text-[10px] font-medium transition-colors cursor-pointer h-full flex items-center gap-1.5 select-none"
+                  class="px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer h-full flex items-center gap-1.5 select-none"
                   :class="selectedSensorKeys.has(sensor.key) 
                     ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' 
                     : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
                   :title="getSensorDisplayLabel(sensor)"
                 >
                   <span 
-                    class="w-1.5 h-1.5 rounded-full" 
+                    class="w-2 h-2 rounded-full" 
                     :style="{ backgroundColor: getSensorShadeColor(index) }"
                   ></span>
                   {{ getSensorDisplayLabel(sensor) }}
@@ -36,28 +36,35 @@
             <!-- Auto-zoom toggle -->
             <button
               @click="autoZoom = !autoZoom"
-              class="inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-medium rounded transition-colors cursor-pointer select-none border"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded transition-colors cursor-pointer select-none border"
               :class="autoZoom 
                 ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700' 
                 : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
               title="Adapter l'échelle aux données"
             >
-              <Icon name="tabler:zoom-in-area" class="w-3.5 h-3.5" />
+              <Icon name="tabler:zoom-in-area" class="w-4 h-4" />
               Auto-zoom
             </button>
 
-            <!-- Smoothing toggle -->
-            <button
-              @click="smoothingEnabled = !smoothingEnabled"
-              class="inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-medium rounded transition-colors cursor-pointer select-none border"
-              :class="smoothingEnabled 
-                ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700' 
-                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
-              title="Lisser les courbes pour atténuer les pics"
-            >
-              <Icon name="tabler:wave-sine" class="w-3.5 h-3.5" />
-              Lissage
-            </button>
+            <!-- Bucket selector (server-side smoothing) -->
+            <div class="inline-flex items-stretch rounded bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700">
+              <template v-for="(option, index) in bucketOptions" :key="option.value">
+                <div 
+                  v-if="index > 0" 
+                  class="w-[1px] h-3/5 bg-gray-200 dark:bg-gray-700 self-center"
+                ></div>
+                <button
+                  @click="selectBucket(option.value)"
+                  class="px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer h-full flex items-center select-none"
+                  :class="selectedBucket === option.value 
+                    ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200' 
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
+                  :title="option.title"
+                >
+                  {{ option.label }}
+                </button>
+              </template>
+            </div>
 
             <!-- Time range selector -->
             <div class="inline-flex items-stretch rounded bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700">
@@ -68,7 +75,7 @@
                 ></div>
                 <button
                   @click="selectedDuration = option.value"
-                  class="px-2 py-0.5 text-[10px] font-medium transition-colors cursor-pointer h-full flex items-center select-none"
+                  class="px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer h-full flex items-center select-none"
                   :class="selectedDuration === option.value 
                     ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' 
                     : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
@@ -82,7 +89,7 @@
         </template>
         
         <ClientOnly>
-          <Line v-if="chartData" :data="chartData" :options="chartOptions" />
+          <Line v-if="chartData" :key="chartVersion" :data="chartData" :options="chartOptions" />
           <template #fallback>
             <div class="h-full flex items-center justify-center text-[10px] text-gray-300">
               Chargement...
@@ -135,6 +142,7 @@ interface SensorItem {
 }
 
 interface Props {
+  moduleId: string // Required for loading data with different buckets
   selectedSensor: string | null
   initialActiveSensor?: string | null // Pre-select this sensor from the card
   history: SensorDataPoint[]
@@ -153,9 +161,55 @@ const props = withDefaults(defineProps<Props>(), {
   sensorHistoryMap: () => ({}),
 })
 
-defineEmits<{
+const emit = defineEmits<{
   close: []
 }>()
+
+// Import useDashboard for loading data with specific bucket
+import { useDashboard } from '~/composables/useDashboard'
+const { loadHistory } = useDashboard()
+
+// Local state for graph-specific data (separate from mini-cards)
+const localHistoryMap = ref<Record<string, SensorDataPoint[]>>({})
+const isLoadingBucket = ref(false)
+
+// Effective history map: use local data if loaded, otherwise use props
+const effectiveHistoryMap = computed(() => {
+  if (Object.keys(localHistoryMap.value).length > 0) {
+    return localHistoryMap.value
+  }
+  return props.sensorHistoryMap
+})
+
+// Effective history for single-sensor mode: use local data if available
+const effectiveHistory = computed<SensorDataPoint[]>(() => {
+  // If we have local data, try to find the matching sensor key
+  if (Object.keys(localHistoryMap.value).length > 0) {
+    // Try to find a key that matches the selected sensor
+    const selectedKey = props.selectedSensor || props.initialActiveSensor
+    if (selectedKey) {
+      // Direct match
+      if (localHistoryMap.value[selectedKey]) {
+        return localHistoryMap.value[selectedKey]
+      }
+      // Try to find by sensor type
+      const sensorType = selectedKey.includes(':') ? selectedKey.split(':')[1] : selectedKey
+      const matchingKey = Object.keys(localHistoryMap.value).find(k => 
+        k.toLowerCase().includes(sensorType.toLowerCase())
+      )
+      if (matchingKey) {
+        return localHistoryMap.value[matchingKey]
+      }
+    }
+    // Return first available if no match found
+    const firstKey = Object.keys(localHistoryMap.value)[0]
+    if (firstKey) {
+      return localHistoryMap.value[firstKey]
+    }
+  }
+  // Fallback to props
+  return props.history
+})
 
 // Color mode detection for grid color
 const colorMode = useColorMode()
@@ -202,48 +256,45 @@ const filterByDuration = (data: SensorDataPoint[]): SensorDataPoint[] => {
   })
 }
 
-// Smoothing state: when enabled, applies moving average to smooth out spikes
-const smoothingEnabled = ref(false)
+// Bucket options for server-side smoothing (TimescaleDB time_bucket)
+const bucketOptions = [
+  { value: 'auto', label: 'Auto', title: 'Lissage automatique selon la durée' },
+  { value: '5min', label: '5m', title: 'Moyenne sur 5 minutes' },
+  { value: '15min', label: '15m', title: 'Moyenne sur 15 minutes' },
+  { value: '30min', label: '30m', title: 'Moyenne sur 30 minutes' },
+  { value: '1hour', label: '1h', title: 'Moyenne sur 1 heure' },
+]
 
-// Smoothing window size based on duration (more points for longer durations)
-const smoothingWindowSize = computed(() => {
-  const hours = selectedDurationHours.value
-  if (hours <= 1) return 3      // 1h: small window
-  if (hours <= 6) return 5      // 6h: medium window  
-  if (hours <= 24) return 7     // 24h: larger window
-  return 11                     // 7d: largest window
-})
+// Selected bucket state (defaults to auto for server-side default smoothing)
+const selectedBucket = ref('auto')
 
-// Apply moving average smoothing to data
-const applySmoothing = (data: SensorDataPoint[]): SensorDataPoint[] => {
-  if (!smoothingEnabled.value || data.length < 3) return data
+// Handle bucket selection - load data directly from API with selected bucket
+const selectBucket = async (bucket: string) => {
+  if (bucket === selectedBucket.value) return
   
-  const windowSize = smoothingWindowSize.value
-  const halfWindow = Math.floor(windowSize / 2)
+  selectedBucket.value = bucket
+  isLoadingBucket.value = true
   
-  return data.map((point, index) => {
-    // Calculate window bounds
-    const start = Math.max(0, index - halfWindow)
-    const end = Math.min(data.length - 1, index + halfWindow)
+  try {
+    // Calculate days from selectedDurationHours
+    const days = Math.ceil(selectedDurationHours.value / 24) || 1
     
-    // Calculate average of values in window
-    let sum = 0
-    let count = 0
-    for (let i = start; i <= end; i++) {
-      if (data[i].value !== null && data[i].value !== undefined) {
-        sum += data[i].value
-        count++
-      }
+    // Load data with the new bucket directly
+    const newData = await loadHistory(props.moduleId, days, bucket)
+    
+    if (newData) {
+      localHistoryMap.value = newData
+      chartVersion.value++ // Force chart re-render
     }
-    
-    const smoothedValue = count > 0 ? sum / count : point.value
-    
-    return {
-      ...point,
-      value: smoothedValue
-    }
-  })
+  } catch (error) {
+    console.error('[SensorDetailGraph] Error loading bucket data:', error)
+  } finally {
+    isLoadingBucket.value = false
+  }
 }
+
+// Version counter to force Chart.js re-render
+const chartVersion = ref(0)
 
 // Initialize with the active sensor from the card (or fallback to primary sensor)
 watch(() => [props.selectedSensor, props.initialActiveSensor] as const, ([selected, initial]) => {
@@ -450,7 +501,7 @@ const chartData = computed<ChartData<'line'> | null>(() => {
   // Check if we have multi-sensor data available
   const hasMultiSensorData = props.availableSensors && 
     props.availableSensors.length > 1 && 
-    Object.keys(props.sensorHistoryMap || {}).length > 0
+    Object.keys(effectiveHistoryMap.value || {}).length > 0
 
   if (hasMultiSensorData) {
     // Multi-sensor mode: create one dataset per selected sensor
@@ -458,7 +509,7 @@ const chartData = computed<ChartData<'line'> | null>(() => {
     
     for (const sensorKey of selectedSensorKeys.value) {
       // Filter by selected duration
-      const rawHistory = props.sensorHistoryMap?.[sensorKey]
+      const rawHistory = effectiveHistoryMap.value?.[sensorKey]
       const sensorHistory = filterByDuration(rawHistory || [])
       if (sensorHistory.length < 2) continue
       
@@ -474,11 +525,8 @@ const chartData = computed<ChartData<'line'> | null>(() => {
         return timeA - timeB
       })
       
-      // Apply smoothing if enabled
-      const processedData = applySmoothing(sortedData)
-      
-      // Apply normalization ratio to values
-      const normalizedData = processedData.map(m => ({ 
+      // Apply normalization ratio to values (smoothing is now done server-side)
+      const normalizedData = sortedData.map(m => ({ 
         x: m.time as unknown as number, 
         y: m.value / ratio 
       }))
@@ -508,8 +556,8 @@ const chartData = computed<ChartData<'line'> | null>(() => {
   // Fallback: single sensor mode (original behavior)
   if (!hasHistory.value) return null
 
-  // Filter by selected duration for single sensor mode
-  const filteredHistory = filterByDuration(props.history)
+  // Filter by selected duration for single sensor mode - use effectiveHistory for bucket support
+  const filteredHistory = filterByDuration(effectiveHistory.value)
   if (filteredHistory.length < 2) return null
 
   const sortedData = [...filteredHistory].sort((a, b) => {
@@ -518,14 +566,11 @@ const chartData = computed<ChartData<'line'> | null>(() => {
     return timeA - timeB
   })
 
-  // Apply smoothing if enabled
-  const processedData = applySmoothing(sortedData)
-
-  // Calculate average time gap to detect significant gaps
+  // Calculate average time gap to detect significant gaps (smoothing is now done server-side)
   const timeGaps: number[] = []
-  for (let i = 1; i < processedData.length; i++) {
-    const t1 = processedData[i-1].time instanceof Date ? processedData[i-1].time.getTime() : new Date(processedData[i-1].time).getTime()
-    const t2 = processedData[i].time instanceof Date ? processedData[i].time.getTime() : new Date(processedData[i].time).getTime()
+  for (let i = 1; i < sortedData.length; i++) {
+    const t1 = sortedData[i-1].time instanceof Date ? sortedData[i-1].time.getTime() : new Date(sortedData[i-1].time).getTime()
+    const t2 = sortedData[i].time instanceof Date ? sortedData[i].time.getTime() : new Date(sortedData[i].time).getTime()
     timeGaps.push(t2 - t1)
   }
   
@@ -535,9 +580,9 @@ const chartData = computed<ChartData<'line'> | null>(() => {
 
   // Pre-compute gap indices for segment styling
   const gapIndices = new Set<number>()
-  for (let i = 1; i < processedData.length; i++) {
-    const t1 = processedData[i-1].time instanceof Date ? processedData[i-1].time.getTime() : new Date(processedData[i-1].time).getTime()
-    const t2 = processedData[i].time instanceof Date ? processedData[i].time.getTime() : new Date(processedData[i].time).getTime()
+  for (let i = 1; i < sortedData.length; i++) {
+    const t1 = sortedData[i-1].time instanceof Date ? sortedData[i-1].time.getTime() : new Date(sortedData[i-1].time).getTime()
+    const t2 = sortedData[i].time instanceof Date ? sortedData[i].time.getTime() : new Date(sortedData[i].time).getTime()
     if (t2 - t1 > gapThreshold) {
       gapIndices.add(i - 1)
     }
@@ -550,7 +595,7 @@ const chartData = computed<ChartData<'line'> | null>(() => {
         backgroundColor: hexToRgba(props.sensorColor, 0.2),
         borderColor: props.sensorColor,
         borderWidth: 2,
-        data: processedData.map(m => ({ x: m.time as unknown as number, y: m.value })),
+        data: sortedData.map(m => ({ x: m.time as unknown as number, y: m.value })),
         tension: 0.2,
         fill: true,
         pointRadius: 0,

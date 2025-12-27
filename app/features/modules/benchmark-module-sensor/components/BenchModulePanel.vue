@@ -70,6 +70,7 @@
       <Transition name="slide-panel">
         <SensorDetailGraph
           v-if="selectedGraphSensor"
+          :module-id="props.moduleId"
           :selected-sensor="selectedGraphSensor"
           :initial-active-sensor="selectedGraphActiveSensor"
           :history="getSensorHistory(selectedGraphSensor)"
@@ -134,6 +135,7 @@ const activeSensorByGroup = reactive<Record<string, string>>({})
 const handleActiveSensorChange = (groupType: string, sensorKey: string) => {
   activeSensorByGroup[groupType] = sensorKey
 }
+
 
 // Define groups by sensor_type (the keys come from composite keys now)
 const sensorGroupsDefinition = [

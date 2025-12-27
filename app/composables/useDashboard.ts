@@ -35,15 +35,17 @@ export const useDashboard = () => {
    * Load only the historical sensor data
    * Used for time range changes - does NOT set global loading state
    * Now dynamically handles all sensor keys from API response
+   * @param bucket - TimescaleDB aggregation bucket (auto, raw, 1min, 5min, 15min, 30min, 1hour)
    */
   const loadHistory = async (
     moduleId: string,
-    days: number = 1
+    days: number = 1,
+    bucket: string = 'auto'
   ): Promise<Record<string, SensorDataPoint[]> | null> => {
     if (!moduleId) return null
 
     try {
-      const response = await getApiModulesIdHistory(moduleId, { days: days.toString() })
+      const response = await getApiModulesIdHistory(moduleId, { days: days.toString(), bucket } as any)
       const sensors = (response.data as Record<string, unknown>) || {}
 
       // Dynamically process all sensor keys

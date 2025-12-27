@@ -26,7 +26,7 @@
             icon="tabler:x"
             label="Fermer"
             variant="ghost"
-            size="small"
+            size="middle"
             :clickable="true"
             @click="$emit('close')"
           />
