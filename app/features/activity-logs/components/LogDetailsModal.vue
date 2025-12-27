@@ -20,7 +20,7 @@
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <Icon name="tabler:code" class="w-5 h-5 text-indigo-500" />
-            Détails du Log
+            {{ $t('logs.details.title') }}
           </h3>
           <button
             @click="$emit('close')"
@@ -39,11 +39,11 @@
           <!-- Metadata -->
           <div v-if="log" class="mt-4 grid grid-cols-2 gap-4 text-sm">
             <div class="flex flex-col gap-1">
-              <span class="text-xs text-gray-500 dark:text-gray-400">ID</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">{{ $t('logs.details.id') }}</span>
               <span class="font-mono text-xs text-gray-700 dark:text-gray-300">{{ log.id }}</span>
             </div>
             <div class="flex flex-col gap-1">
-              <span class="text-xs text-gray-500 dark:text-gray-400">Timestamp</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">{{ $t('logs.details.timestamp') }}</span>
               <span class="font-mono text-xs text-gray-700 dark:text-gray-300">{{ formatTime(log.time) }}</span>
             </div>
           </div>
@@ -55,7 +55,7 @@
             @click="$emit('close')"
             class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
           >
-            Fermer
+            {{ $t('common.close') }}
           </button>
         </div>
       </div>
@@ -65,6 +65,7 @@
 
 <script setup lang="ts">
 import type { LogEntry } from '../types'
+const { locale } = useI18n()
 
 const props = defineProps<{
   log: LogEntry | null
@@ -81,7 +82,13 @@ const formattedDetails = computed(() => {
 
 const formatTime = (time: string) => {
   const date = new Date(time)
-  return date.toLocaleString('fr-FR', {
+  // Map locale code to standard locale string
+  const localeMap: Record<string, string> = {
+    'fr': 'fr-FR',
+    'en': 'en-US'
+  }
+  const currentLocale = localeMap[locale.value] || 'fr-FR'
+  return date.toLocaleString(currentLocale, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

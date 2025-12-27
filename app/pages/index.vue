@@ -13,22 +13,22 @@
             <div
               class="animate-spin w-8 h-8 border-2 border-gray-300 border-t-emerald-500 rounded-full mx-auto mb-4"
             ></div>
-            <div class="text-gray-400">Chargement des modules...</div>
+            <div class="text-gray-400">{{ $t('loading.modules') }}</div>
           </div>
 
           <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 m-4">
-            <div class="text-lg font-semibold mb-2 text-red-700">Erreur</div>
+            <div class="text-lg font-semibold mb-2 text-red-700">{{ $t('error.title') }}</div>
             <div class="text-sm text-red-600">{{ error }}</div>
             <button
               class="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
               @click="reloadPage"
             >
-              Réessayer
+              {{ $t('common.retry') }}
             </button>
           </div>
 
           <div v-else-if="modules.length === 0" class="text-center py-8 text-gray-500">
-            Aucun module trouvé
+            {{ $t('modules.empty') }}
           </div>
 
           <div v-else class="space-y-8">
@@ -56,7 +56,7 @@
           </div>
 
           <template #fallback>
-            <div class="p-8 text-center text-gray-500">Chargement...</div>
+            <div class="p-8 text-center text-gray-500">{{ $t('common.loading') }}</div>
           </template>
         </ClientOnly>
       </main>
@@ -119,6 +119,8 @@ const activeDeviceForZone = ref<string | null>(null)
 // Zones composable for refresh
 const { zones, fetchZones } = useZones()
 
+const { t } = useI18n()
+
 const modulesByZone = computed<ModuleGroup[]>(() => {
   const groups: ModuleGroup[] = []
   const assignedModuleIds = new Set<string>()
@@ -143,7 +145,7 @@ const modulesByZone = computed<ModuleGroup[]>(() => {
   if (unassigned.length > 0) {
     groups.push({
       zoneId: null,
-      zoneName: 'Non assignés',
+      zoneName: t('zones.unassigned'),
       modules: unassigned
     })
   }

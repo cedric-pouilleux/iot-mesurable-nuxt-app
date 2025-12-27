@@ -1,0 +1,135 @@
+{
+    "common": {
+        "close": "Close",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "retry": "Retry",
+        "delete": "Delete",
+        "deleting": "Deleting...",
+        "save": "Save",
+        "loading": "Loading...",
+        "error": "Error",
+        "success": "Success",
+        "viewDetails": "View details",
+        "toggleTheme": "Toggle theme",
+        "options": "Options"
+    },
+    "loading": {
+        "modules": "Loading modules...",
+        "logs": "Loading logs...",
+        "default": "Loading..."
+    },
+    "error": {
+        "title": "Error",
+        "generic": "An error occurred",
+        "retry": "Retry"
+    },
+    "modules": {
+        "empty": "No modules found",
+        "loading": "Loading modules...",
+        "types": {
+            "air-quality": "Air Quality",
+            "air-quality-bench": "Air Quality (Benchmark)",
+            "lighting": "Lighting",
+            "climate": "Climate",
+            "unknown": "Unknown module"
+        },
+        "deviceInfo": {
+            "hardware": "Hardware",
+            "network": "Network",
+            "memory": "Memory",
+            "uptime": "Uptime",
+            "signal": "Signal",
+            "ip": "IP",
+            "mac": "MAC",
+            "flash": "Flash",
+            "ram": "RAM",
+            "sketch": "Sketch",
+            "ota": "OTA",
+            "system": "System",
+            "free": "Free",
+            "used": "Used",
+            "available": "Available"
+        },
+        "sensorConfig": {
+            "title": "Sensor Configuration",
+            "dbSizeTooltip": "Database space used",
+            "daily": "day",
+            "monthly": "month",
+            "yearly": "year",
+            "projectionTooltip": "Estimated per {period}",
+            "noSensors": "No sensors detected"
+        },
+        "zone": {
+            "title": "Module Configuration",
+            "associatedZone": "Associated Zone",
+            "none": "No Zone",
+            "admin": "Zone Administration"
+        }
+    },
+    "zones": {
+        "unassigned": "Unassigned"
+    },
+    "sensors": {
+        "temperature": "Temperature",
+        "humidity": "Humidity",
+        "pressure": "Pressure",
+        "co2": "CO2",
+        "eco2": "eCO2",
+        "voc": "VOC",
+        "tvoc": "TVOC",
+        "co": "CO",
+        "pm1": "PM1.0",
+        "pm25": "PM2.5",
+        "pm4": "PM4.0",
+        "pm10": "PM10"
+    },
+    "thresholds": {
+        "good": "Good",
+        "moderate": "Moderate",
+        "unhealthySensitive": "Unhealthy for sensitive",
+        "unhealthy": "Unhealthy",
+        "veryUnhealthy": "Very unhealthy",
+        "hazardous": "Hazardous"
+    },
+    "logs": {
+        "title": "Activity Logs",
+        "loading": "Loading logs...",
+        "empty": "No logs found",
+        "deleteAll": "Clear logs",
+        "deleteConfirmTitle": "Confirm deletion",
+        "deleteConfirmMessage": "Are you sure you want to delete all logs? This action is irreversible.",
+        "logsWillBeDeleted": "{count} logs will be deleted.",
+        "source": {
+            "user": "User action",
+            "system": "System"
+        },
+        "details": {
+            "title": "Log Details",
+            "id": "ID",
+            "timestamp": "Timestamp"
+        },
+        "direction": {
+            "out": "Outgoing",
+            "in": "Incoming"
+        },
+        "pagination": {
+            "showing": "Showing {start} to {end} of {total}",
+            "next": "Next",
+            "previous": "Previous"
+        },
+        "filters": {
+            "period": "Period",
+            "category": "Category",
+            "source": "Source",
+            "direction": "Direction",
+            "level": "Level",
+            "limit": "Limit",
+            "search": "Search..."
+        }
+    },
+    "nav": {
+        "dashboard": "Dashboard",
+        "logs": "Logs"
+    }
+}

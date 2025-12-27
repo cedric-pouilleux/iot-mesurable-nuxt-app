@@ -88,15 +88,17 @@
     </UITooltip>
     
     <!-- Interval Control (disabled when stopped) -->
-    <UISlider
-      v-model="localInterval"
-      :min="10"
-      :max="300"
-      :step="10"
-      suffix="s"
-      :disabled="!isEnabled || hardware.status === 'missing'"
-      @change="saveInterval"
-    />
+    <UITooltip text="Intervalle de lecture (sec)">
+      <UISlider
+        v-model="localInterval"
+        :min="10"
+        :max="300"
+        :step="10"
+        suffix="s"
+        :disabled="!isEnabled || hardware.status === 'missing'"
+        @change="saveInterval"
+      />
+    </UITooltip>
   </div>
 </template>
 
@@ -236,9 +238,14 @@ watch(() => props.hardware.interval, (newVal) => {
   localInterval.value = newVal
 })
 
-// Emit event immediately when localInterval change (slider drag/release)
+// Emit event with debounce when localInterval change (slider drag/release)
+let intervalDebounceTimer: ReturnType<typeof setTimeout> | null = null
+
 watch(localInterval, (newVal) => {
-   emit('interval-change', props.hardware.hardwareKey, newVal)
+  if (intervalDebounceTimer) clearTimeout(intervalDebounceTimer)
+  intervalDebounceTimer = setTimeout(() => {
+    emit('interval-change', props.hardware.hardwareKey, newVal)
+  }, 100)
 })
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
@@ -251,23 +258,18 @@ const saveInterval = async () => {
     saving.value = true
     
     try {
-      const sensorsConfig: Record<string, { interval: number }> = {}
-      for (const m of props.hardware.measurements) {
-        // Use composite keys to decouple hardware configuration
-        // e.g. "dht22:temperature" instead of just "temperature"
-        const compositeKey = `${props.hardware.hardwareKey}:${m.key}`
-        sensorsConfig[compositeKey] = { interval: localInterval.value }
-      }
-      
-      await $fetch(`/api/modules/${encodeURIComponent(props.moduleId)}/config`, {
-        method: 'POST',
-        body: { sensors: sensorsConfig }
+      await $fetch(`/api/modules/${props.moduleId}/hardware/${props.hardware.hardwareKey}/config`, {
+        method: 'PATCH',
+        body: { 
+           interval: localInterval.value
+        }
       })
+      showSnackbar('Intervalle sauvegardé', 'success')
       
-      showSnackbar(`${props.hardware.name}: ${localInterval.value}s`, 'success')
-    } catch (err) {
-      console.error('Failed to save interval:', err)
-      showSnackbar('Erreur sauvegarde', 'error')
+      // Update store/cache if needed? The parent usually re-fetches or we assume success.
+    } catch (e) {
+      console.error(e)
+      showSnackbar('Erreur lors de la sauvegarde', 'error')
     } finally {
       saving.value = false
     }
@@ -319,34 +321,30 @@ const resetSensor = async () => {
 // ============================================================================
 
 const toggleEnabled = async () => {
-  if (toggling.value) return
-  toggling.value = true
+  // Optimistic UI: Update local state immediately
+  const previousState = isEnabled.value
+  const newState = !isEnabled.value
+  isEnabled.value = newState
   
-  const newEnabled = !isEnabled.value
+  // No loading state for instant feedback
   
   try {
-    const response = await $fetch<{ success: boolean; message: string }>(
-      `/api/modules/${encodeURIComponent(props.moduleId)}/hardware/enable`,
-      {
-        method: 'POST',
-        body: { 
-          hardware: props.hardware.hardwareKey,
-          enabled: newEnabled
-        }
-      }
-    )
-    
-    if (response.success) {
-      isEnabled.value = newEnabled
-      showSnackbar(`${props.hardware.name} ${newEnabled ? 'activé' : 'arrêté'}`, 'success')
-    } else {
-      showSnackbar(`Erreur: ${response.message}`, 'error')
-    }
-  } catch (err) {
-    console.error('Failed to toggle hardware:', err)
-    showSnackbar(`Erreur ${newEnabled ? 'activation' : 'arrêt'} ${props.hardware.name}`, 'error')
-  } finally {
-    toggling.value = false
+     const endpoint = newState 
+       ? `/api/modules/${props.moduleId}/hardware/${props.hardware.hardwareKey}/enable`
+       : `/api/modules/${props.moduleId}/hardware/${props.hardware.hardwareKey}/disable`
+       
+     await $fetch(endpoint, { method: 'POST' })
+     
+     // Success notification
+     showSnackbar(newState ? 'Capteur activé' : 'Capteur désactivé', 'success')
+     
+     // Note: Parent component (SensorConfigSection) polls or listens to events to update global state.
+     // Since we updated local isEnabled, the UI is correct immediately.
+  } catch (e) {
+    console.error(e)
+    // Revert styling on error
+    isEnabled.value = previousState
+    showSnackbar('Erreur lors du changement de statut', 'error')
   }
 }
 </script>

@@ -1,13 +1,13 @@
 <template>
-  <UIPanel title="Configuration du module">
+  <UIPanel :title="$t('modules.zone.title')">
     <div class="flex items-center justify-between">
-      <h3 class="text-[12px] font-medium text-gray-500 dark:text-gray-200">Zone associée</h3>
+      <h3 class="text-[12px] font-medium text-gray-500 dark:text-gray-200">{{ $t('modules.zone.associatedZone') }}</h3>
       
       <div class="flex items-center gap-2">
         <UISelect
           :model-value="currentZoneId"
           :options="zoneOptions"
-          placeholder="Aucune zone"
+          :placeholder="$t('modules.zone.none')"
           size="middle"
           class="w-40"
           @update:model-value="handleZoneSelect"
@@ -17,7 +17,7 @@
           icon="tabler:settings"
           variant="ghost"
           size="small"
-          title="Administration des zones"
+          :title="$t('modules.zone.admin')"
           clickable
           @click="$emit('open-zone-drawer')"
         />
@@ -32,6 +32,8 @@ import { useZones } from '~/features/zones/composables/useZones'
 import UIButton from '~/components/design-system/UIButton/UIButton.vue'
 import UISelect from '~/components/design-system/UISelect/UISelect.vue'
 import UIPanel from '~/components/design-system/UIPanel/UIPanel.vue'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   moduleId: string

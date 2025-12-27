@@ -32,18 +32,22 @@
           :variant="optionsPanelOpen ? 'blue' : 'ghost'"
           size="small"
           :clickable="true"
-          label="Options"
-          title="Options du module"
+          :label="$t('common.options')"
+          :title="$t('common.options')"
           @click="$emit('toggle-options')"
         /> 
 
         <!-- Logs Button -->
-        <NuxtLink :to="`/logs?search=${moduleId}&category=HARDWARE`" target="_blank" title="Voir les logs du module">
+        <NuxtLink 
+          :to="localePath({ name: 'logs', query: { search: moduleId, category: 'HARDWARE' } })" 
+          target="_blank" 
+          :title="$t('nav.logs')"
+        >
           <UIButton 
             icon="tabler:notes"
             variant="ghost"
             size="small"
-            label="Logs"
+            :label="$t('nav.logs')"
             :clickable="true"
           />
         </NuxtLink>
@@ -120,20 +124,14 @@ const displayTitle = computed(() => {
   return currentZoneName.value || capitalizedModuleName.value
 })
 
+const { t } = useI18n()
+
 // Module type icon mapping
 const MODULE_TYPE_ICONS: Record<string, string> = {
   'air-quality': 'tabler:wind',
   'air-quality-bench': 'tabler:microscope',
   'lighting': 'tabler:bulb',
   'climate': 'tabler:temperature',
-}
-
-// Module type labels mapping (human-readable)
-const MODULE_TYPE_LABELS: Record<string, string> = {
-  'air-quality': 'Qualité d\'air',
-  'air-quality-bench': 'Qualité de l\'air (Benchmark)',
-  'lighting': 'Éclairage',
-  'climate': 'Climat',
 }
 
 const moduleTypeIcon = computed(() => {
@@ -144,10 +142,11 @@ const moduleTypeIcon = computed(() => {
 
 const moduleTypeLabel = computed(() => {
   const type = props.deviceStatus?.moduleType
-  if (!type) return 'Module inconnu'
-  return MODULE_TYPE_LABELS[type] || type
+  if (!type) return t('modules.types.unknown') || 'Module inconnu'
+  return t(`modules.types.${type}`) || type
 })
 
 const rssiClass = computed(() => getWifiClass(props.rssi))
 
+const localePath = useLocalePath()
 </script>

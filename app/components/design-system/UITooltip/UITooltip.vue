@@ -1,35 +1,39 @@
 <template>
-  <div class="relative inline-flex items-center justify-center group">
+  <div 
+    class="relative inline-flex items-center justify-center" 
+    ref="triggerRef"
+    @mouseenter="show"
+    @mouseleave="hide"
+    title=""
+  >
     <!-- Trigger Element -->
     <slot />
 
-    <!-- Tooltip Bubble -->
-    <div
-      class="absolute z-50 px-2 py-1 text-[10px] font-medium text-white bg-gray-900 dark:bg-gray-700 rounded shadow-lg pointer-events-none transition-all duration-300 ease-out opacity-0 blur-sm"
-      :class="[
-        positionClasses,
-        widthClass,
-        multiline ? 'whitespace-pre-wrap' : 'whitespace-nowrap',
-        'group-hover:opacity-100 group-hover:blur-0'
-      ]"
-    >
-      <slot name="content">
-        {{ text }}
-      </slot>
-      
-      <!-- Caret / Arrow -->
-      <div 
-        class="absolute w-0 h-0 border-4 border-transparent"
-        :class="arrowClasses"
-      ></div>
-    </div>
+    <!-- Teleported Tooltip Bubble -->
+    <Teleport to="body">
+      <div
+        v-if="isVisible"
+        ref="tooltipRef"
+        class="fixed px-2 py-1 text-[10px] font-medium text-white bg-gray-900 rounded shadow-lg pointer-events-none transition-[opacity,transform,filter] duration-300 ease-out"
+        :class="[
+          widthClass,
+          multiline ? 'whitespace-pre-wrap' : 'whitespace-nowrap',
+          isFadingIn ? 'opacity-100 blur-0 translate-y-0' : 'opacity-0 blur-sm translate-y-1'
+        ]"
+        :style="tooltipStyle"
+      >
+        <slot name="content">
+          {{ text }}
+        </slot>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, nextTick, onBeforeUnmount } from 'vue'
 
-type Position = 'top' | 'bottom' | 'left' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+type Position = 'top' | 'bottom' | 'left' | 'right'
 
 const props = withDefaults(defineProps<{
   text?: string
@@ -43,49 +47,89 @@ const props = withDefaults(defineProps<{
 })
 
 const widthClass = computed(() => props.width || '')
+const triggerRef = ref<HTMLElement | null>(null)
+const tooltipRef = ref<HTMLElement | null>(null)
 
-const positionClasses = computed(() => {
-  switch (props.position) {
-    case 'top':       return 'bottom-full left-1/2 -translate-x-1/2 mb-1.5'
-    case 'top-left':  return 'bottom-full left-0 mb-1.5' // Aligned left edge
-    case 'top-right': return 'bottom-full right-0 mb-1.5' // Aligned right edge
-    
-    case 'bottom':       return 'top-full left-1/2 -translate-x-1/2 mt-1.5'
-    case 'bottom-left':  return 'top-full left-0 mt-1.5'
-    case 'bottom-right': return 'top-full right-0 mt-1.5'
-    
-    case 'left':  return 'right-full top-1/2 -translate-y-1/2 mr-1.5'
-    case 'right': return 'left-full top-1/2 -translate-y-1/2 ml-1.5'
-    
-    default: return 'bottom-full left-1/2 -translate-x-1/2 mb-1.5'
-  }
+const isVisible = ref(false)
+const isFadingIn = ref(false)
+const tooltipStyle = ref<Record<string, string>>({ 
+  top: '-9999px', 
+  left: '-9999px', 
+  zIndex: '999999' 
 })
 
-const arrowClasses = computed(() => {
-  const base = 'absolute w-0 h-0 border-4 border-transparent'
+let fadeTimeout: ReturnType<typeof setTimeout> | null = null
+
+const calculatePosition = () => {
+  if (!triggerRef.value || !tooltipRef.value) return
+
+  const triggerRect = triggerRef.value.getBoundingClientRect()
+  const tooltipRect = tooltipRef.value.getBoundingClientRect()
   
+  let top = 0
+  let left = 0
+  const gap = 6
+
   switch (props.position) {
     case 'top':
-      return 'top-full left-1/2 -translate-x-1/2 border-t-gray-900 dark:border-t-gray-700'
-    case 'top-left':
-      return 'top-full left-3 border-t-gray-900 dark:border-t-gray-700'
-    case 'top-right':
-      return 'top-full right-3 border-t-gray-900 dark:border-t-gray-700'
-      
+      top = triggerRect.top - tooltipRect.height - gap
+      left = triggerRect.left + (triggerRect.width / 2) - (tooltipRect.width / 2)
+      break
     case 'bottom':
-      return 'bottom-full left-1/2 -translate-x-1/2 border-b-gray-900 dark:border-b-gray-700'
-    case 'bottom-left':
-      return 'bottom-full left-3 border-b-gray-900 dark:border-b-gray-700'
-    case 'bottom-right':
-      return 'bottom-full right-3 border-b-gray-900 dark:border-b-gray-700'
-      
+      top = triggerRect.bottom + gap
+      left = triggerRect.left + (triggerRect.width / 2) - (tooltipRect.width / 2)
+      break
     case 'left':
-      return 'left-full top-1/2 -translate-y-1/2 border-l-gray-900 dark:border-l-gray-700'
+      top = triggerRect.top + (triggerRect.height / 2) - (tooltipRect.height / 2)
+      left = triggerRect.left - tooltipRect.width - gap
+      break
     case 'right':
-      return 'right-full top-1/2 -translate-y-1/2 border-r-gray-900 dark:border-r-gray-700'
-      
+      top = triggerRect.top + (triggerRect.height / 2) - (tooltipRect.height / 2)
+      left = triggerRect.right + gap
+      break
     default:
-      return 'top-full left-1/2 -translate-x-1/2 border-t-gray-900 dark:border-t-gray-700'
+      top = triggerRect.top - tooltipRect.height - gap
+      left = triggerRect.left + (triggerRect.width / 2) - (tooltipRect.width / 2)
   }
+
+  // Prevent edge overflow
+  if (left < 4) left = 4
+  if (left + tooltipRect.width > window.innerWidth - 4) left = window.innerWidth - tooltipRect.width - 4
+  if (top < 4) top = 4 
+
+  tooltipStyle.value = {
+    top: `${top}px`,
+    left: `${left}px`,
+    zIndex: '999999'
+  }
+}
+
+const show = async () => {
+  if (fadeTimeout) clearTimeout(fadeTimeout)
+  isVisible.value = true
+  
+  await nextTick()
+  calculatePosition()
+  
+  // Force a reflow before adding the visible class for transition to work
+  // Using double requestAnimationFrame for safety
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      isFadingIn.value = true
+    })
+  })
+}
+
+const hide = () => {
+  isFadingIn.value = false
+  
+  if (fadeTimeout) clearTimeout(fadeTimeout)
+  fadeTimeout = setTimeout(() => {
+    isVisible.value = false
+  }, 300) // Match CSS duration
+}
+
+onBeforeUnmount(() => {
+  if (fadeTimeout) clearTimeout(fadeTimeout)
 })
 </script>

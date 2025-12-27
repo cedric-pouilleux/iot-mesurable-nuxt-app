@@ -47,44 +47,52 @@
             </button>
 
             <!-- Bucket selector (server-side smoothing) -->
-            <div class="inline-flex items-stretch rounded bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700">
-              <template v-for="(option, index) in bucketOptions" :key="option.value">
-                <div 
-                  v-if="index > 0" 
-                  class="w-[1px] h-3/5 bg-gray-200 dark:bg-gray-700 self-center"
-                ></div>
-                <button
-                  @click="selectBucket(option.value)"
-                  class="px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer h-full flex items-center select-none"
-                  :class="selectedBucket === option.value 
-                    ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200' 
-                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
-                  :title="option.title"
-                >
-                  {{ option.label }}
-                </button>
-              </template>
-            </div>
+            <UITooltip text="Lissage : intervalle de moyenne des points">
+              <div 
+                class="inline-flex items-stretch rounded bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700"
+              >
+                <template v-for="(option, index) in filteredBucketOptions" :key="option.value">
+                  <div 
+                    v-if="index > 0" 
+                    class="w-[1px] h-3/5 bg-gray-200 dark:bg-gray-700 self-center"
+                  ></div>
+                  <button
+                    @click="selectBucket(option.value)"
+                    class="px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer h-full flex items-center select-none"
+                    :class="selectedBucket === option.value 
+                      ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200' 
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
+                    :title="option.title"
+                  >
+                    {{ option.label }}
+                  </button>
+                </template>
+              </div>
+            </UITooltip>
 
             <!-- Time range selector -->
-            <div class="inline-flex items-stretch rounded bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700">
-              <template v-for="(option, index) in durationOptions" :key="option.value">
-                <div 
-                  v-if="index > 0" 
-                  class="w-[1px] h-3/5 bg-gray-200 dark:bg-gray-700 self-center"
-                ></div>
-                <button
-                  @click="selectedDuration = option.value"
-                  class="px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer h-full flex items-center select-none"
-                  :class="selectedDuration === option.value 
-                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' 
-                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
-                  :title="option.label"
-                >
-                  {{ option.label }}
-                </button>
-              </template>
-            </div>
+            <UITooltip text="Durée : période de temps affichée sur le graphique">
+              <div 
+                class="inline-flex items-stretch rounded bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700"
+              >
+                <template v-for="(option, index) in filteredDurationOptions" :key="option.value">
+                  <div 
+                    v-if="index > 0" 
+                    class="w-[1px] h-3/5 bg-gray-200 dark:bg-gray-700 self-center"
+                  ></div>
+                  <button
+                    @click="selectedDuration = option.value"
+                    class="px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer h-full flex items-center select-none"
+                    :class="selectedDuration === option.value 
+                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' 
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
+                    :title="option.label"
+                  >
+                    {{ option.label }}
+                  </button>
+                </template>
+              </div>
+            </UITooltip>
           </div>
         </template>
         
@@ -120,6 +128,7 @@ import { Line } from 'vue-chartjs'
 import 'chartjs-adapter-date-fns'
 import { getSensorRange, getNormalizationRatio } from '../config/sensors'
 import SensorCardOpen from './SensorCardOpen.vue'
+import UITooltip from '~/components/design-system/UITooltip/UITooltip.vue'
 
 if (process.client) {
   ChartJS.register(
@@ -237,6 +246,14 @@ const durationOptions = [
 // Selected duration state (defaults to 24h)
 const selectedDuration = ref('24h')
 
+// Filter duration options: hide 1h when 1hour bucket is selected (doesn't make sense)
+const filteredDurationOptions = computed(() => {
+  if (selectedBucket.value === '1hour') {
+    return durationOptions.filter(o => o.value !== '1h')
+  }
+  return durationOptions
+})
+
 // Get hours from selected duration
 const selectedDurationHours = computed(() => {
   const option = durationOptions.find(o => o.value === selectedDuration.value)
@@ -264,6 +281,14 @@ const bucketOptions = [
   { value: '30min', label: '30m', title: 'Moyenne sur 30 minutes' },
   { value: '1hour', label: '1h', title: 'Moyenne sur 1 heure' },
 ]
+
+// Filter bucket options: hide 1h bucket when 1h duration is selected (doesn't make sense)
+const filteredBucketOptions = computed(() => {
+  if (selectedDuration.value === '1h') {
+    return bucketOptions.filter(o => o.value !== '1hour')
+  }
+  return bucketOptions
+})
 
 // Selected bucket state (defaults to auto for server-side default smoothing)
 const selectedBucket = ref('auto')
@@ -377,23 +402,17 @@ const getSensorDisplayLabel = (sensor: SensorItem): string => {
 
 // Dynamic title based on sensor type
 // Only COV/TVOC sensors have dynamic titles, others use the group label
+const { t } = useI18n()
+
 const dynamicTitle = computed(() => {
   const firstKey = Array.from(selectedSensorKeys.value)[0]
+  
   if (!firstKey) return props.sensorLabel
   
   const parts = firstKey.split(':')
   const keyLower = parts.length > 1 ? parts[1].toLowerCase() : firstKey.toLowerCase()
   
-  // COV sensors: show different titles based on active sensor
-  if (keyLower === 'tvoc') {
-    return 'Composés Organiques Volatils Totaux'
-  }
-  if (keyLower === 'voc') {
-    return 'Composés Organiques Volatils'
-  }
-  
-  // All other sensors (Temperature, Humidity, PM, etc.) use the group label
-  return props.sensorLabel
+  return t(`sensors.${keyLower}`)
 })
 
 // Dynamic color based on selected sensor
@@ -420,19 +439,24 @@ const hasHistory = computed(() => props.history && props.history.length >= 2)
 const allDataValues = computed(() => {
   const values: number[] = []
   
+  // Check if we have multi-sensor data available (same logic as chartData)
+  const hasMultiSensorData = props.availableSensors && 
+    props.availableSensors.length > 1 && 
+    Object.keys(effectiveHistoryMap.value || {}).length > 0
+  
   // Multi-sensor mode
-  if (props.sensorHistoryMap && Object.keys(props.sensorHistoryMap).length > 0) {
+  if (hasMultiSensorData) {
     for (const sensorKey of selectedSensorKeys.value) {
-      const rawHistory = props.sensorHistoryMap[sensorKey]
+      const rawHistory = effectiveHistoryMap.value?.[sensorKey]
       const sensorHistory = filterByDuration(rawHistory || [])
       if (sensorHistory.length > 0) {
         const ratio = getNormalizationRatio(sensorKey)
         values.push(...sensorHistory.map(d => d.value / ratio).filter(v => v !== null && v !== undefined))
       }
     }
-  } else if (props.history) {
-    // Single sensor mode - also filter
-    const filteredHistory = filterByDuration(props.history)
+  } else {
+    // Single sensor mode - use effectiveHistory ensuring we use local bucket data if available
+    const filteredHistory = filterByDuration(effectiveHistory.value)
     values.push(...filteredHistory.map(d => d.value).filter(v => v !== null && v !== undefined))
   }
   
@@ -664,6 +688,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
   },
   plugins: {
     legend: { display: false },
+    annotation: { annotations: {} },
     tooltip: {
       enabled: true,
       backgroundColor: '#111827',

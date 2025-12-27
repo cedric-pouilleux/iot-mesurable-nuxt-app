@@ -1,0 +1,135 @@
+{
+    "common": {
+        "close": "Fermer",
+        "cancel": "Annuler",
+        "confirm": "Confirmer",
+        "retry": "Réessayer",
+        "delete": "Supprimer",
+        "deleting": "Suppression...",
+        "save": "Enregistrer",
+        "loading": "Chargement...",
+        "error": "Erreur",
+        "success": "Succès",
+        "viewDetails": "Voir les détails",
+        "toggleTheme": "Basculer le thème",
+        "options": "Options"
+    },
+    "loading": {
+        "modules": "Chargement des modules...",
+        "logs": "Chargement des logs...",
+        "default": "Chargement..."
+    },
+    "error": {
+        "title": "Erreur",
+        "generic": "Une erreur est survenue",
+        "retry": "Réessayer"
+    },
+    "modules": {
+        "empty": "Aucun module trouvé",
+        "loading": "Chargement des modules...",
+        "types": {
+            "air-quality": "Qualité d'air",
+            "air-quality-bench": "Qualité de l'air (Benchmark)",
+            "lighting": "Éclairage",
+            "climate": "Climat",
+            "unknown": "Module inconnu"
+        },
+        "deviceInfo": {
+            "hardware": "Matériel",
+            "network": "Réseau",
+            "memory": "Mémoire",
+            "uptime": "Temps de fonctionnement",
+            "signal": "Signal",
+            "ip": "IP",
+            "mac": "MAC",
+            "flash": "Flash",
+            "ram": "RAM",
+            "sketch": "Sketch",
+            "ota": "OTA",
+            "system": "Système",
+            "free": "Libre",
+            "used": "Utilisé",
+            "available": "Disponible"
+        },
+        "sensorConfig": {
+            "title": "Configuration des Capteurs",
+            "dbSizeTooltip": "Espace occupé en base de données",
+            "daily": "jour",
+            "monthly": "mois",
+            "yearly": "an",
+            "projectionTooltip": "Estimation par {period}",
+            "noSensors": "Aucun capteur détecté"
+        },
+        "zone": {
+            "title": "Configuration du module",
+            "associatedZone": "Zone associée",
+            "none": "Aucune zone",
+            "admin": "Administration des zones"
+        }
+    },
+    "zones": {
+        "unassigned": "Non assignés"
+    },
+    "sensors": {
+        "temperature": "Température",
+        "humidity": "Humidité",
+        "pressure": "Pression",
+        "co2": "CO2",
+        "eco2": "eCO2",
+        "voc": "COV",
+        "tvoc": "TCOV",
+        "co": "CO",
+        "pm1": "PM1.0",
+        "pm25": "PM2.5",
+        "pm4": "PM4.0",
+        "pm10": "PM10"
+    },
+    "thresholds": {
+        "good": "Bon",
+        "moderate": "Modéré",
+        "unhealthySensitive": "Mauvais pour les sensibles",
+        "unhealthy": "Mauvais",
+        "veryUnhealthy": "Très mauvais",
+        "hazardous": "Dangereux"
+    },
+    "logs": {
+        "title": "Logs d'activité",
+        "loading": "Chargement des logs...",
+        "empty": "Aucun log trouvé",
+        "deleteAll": "Vider les logs",
+        "deleteConfirmTitle": "Confirmer la suppression",
+        "deleteConfirmMessage": "Êtes-vous sûr de vouloir supprimer tous les logs ? Cette action est irréversible.",
+        "logsWillBeDeleted": "{count} logs seront supprimés.",
+        "source": {
+            "user": "Action utilisateur",
+            "system": "Système"
+        },
+        "details": {
+            "title": "Détails du Log",
+            "id": "ID",
+            "timestamp": "Horodatage"
+        },
+        "direction": {
+            "out": "Envoi",
+            "in": "Réception"
+        },
+        "pagination": {
+            "showing": "Affichage de {start} à {end} sur {total}",
+            "next": "Suivant",
+            "previous": "Précédent"
+        },
+        "filters": {
+            "period": "Période",
+            "category": "Catégorie",
+            "source": "Source",
+            "direction": "Direction",
+            "level": "Niveau",
+            "limit": "Limite",
+            "search": "Rechercher..."
+        }
+    },
+    "nav": {
+        "dashboard": "Tableau de bord",
+        "logs": "Logs"
+    }
+}

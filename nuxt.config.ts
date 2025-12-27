@@ -14,7 +14,23 @@ export default defineNuxtConfig({
     '@benchmark-module-sensors': path.resolve(__dirname, 'app/features/modules/benchmark-module-sensor'),
   },
 
-  modules: ['@nuxtjs/tailwindcss', '@nuxt/icon', '@nuxtjs/color-mode'],
+  modules: ['@nuxtjs/tailwindcss', '@nuxt/icon', '@nuxtjs/color-mode', '@nuxtjs/i18n'],
+
+  i18n: {
+    locales: [
+      { code: 'fr', name: 'Français', file: 'fr.json' },
+      { code: 'en', name: 'English', file: 'en.json' },
+    ],
+    defaultLocale: 'fr',
+    strategy: 'prefix',
+    lazy: true,
+    langDir: 'locales',
+    detectBrowserLanguage: {
+      useCookie: false,
+      fallbackLocale: 'fr',
+      redirectOn: 'root',
+    },
+  },
 
   colorMode: {
     classSuffix: '',

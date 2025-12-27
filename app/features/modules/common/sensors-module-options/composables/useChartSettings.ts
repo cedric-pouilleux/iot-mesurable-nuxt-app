@@ -58,40 +58,33 @@ const saveSettings = () => {
 // Init on module load
 loadSettings()
 
+// Debounce logic for expensive chart updates
+const debouncedGraphDuration = ref(settings.value.graphDuration)
+const debouncedColorThresholds = ref(settings.value.colorThresholds)
+const debouncedUseFixedScale = ref(settings.value.useFixedScale)
+
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
+// Watch for changes and debounce updates
+watch(
+  () => [settings.value.graphDuration, settings.value.colorThresholds, settings.value.useFixedScale],
+  ([newDuration, newColorThresholds, newFixedScale]) => {
+    if (debounceTimer) clearTimeout(debounceTimer)
+    debounceTimer = setTimeout(() => {
+      debouncedGraphDuration.value = newDuration as string
+      debouncedColorThresholds.value = newColorThresholds as boolean
+      debouncedUseFixedScale.value = newFixedScale as boolean
+    }, 500)
+  }
+)
+
 export function useChartSettings() {
   const showCharts = computed({
     get: () => true, // Always show charts in normal mode
-    set: () => {} // No-op
+    set: () => { } // No-op
   })
 
-  const showThresholdLines = computed({
-    get: () => false, // Threshold lines disabled - using colorThresholds for colored curves instead
-    set: () => {} // No-op
-  })
-
-  const colorThresholds = computed({
-    get: () => settings.value.colorThresholds,
-    set: (value: boolean) => {
-      settings.value.colorThresholds = value
-      saveSettings()
-    }
-  })
-
-  const showAlertThresholds = computed({
-    get: () => settings.value.showAlertThresholds,
-    set: (value: boolean) => {
-      settings.value.showAlertThresholds = value
-      saveSettings()
-    }
-  })
-
-  const minimalMode = computed({
-    get: () => settings.value.minimalMode,
-    set: (value: boolean) => {
-      settings.value.minimalMode = value
-      saveSettings()
-    }
-  })
+  // ... (keep existing computed for UI) ...
 
   const graphDuration = computed({
     get: () => settings.value.graphDuration,
@@ -101,51 +94,43 @@ export function useChartSettings() {
     }
   })
 
-  const useFixedScale = computed({
-    get: () => settings.value.useFixedScale,
-    set: (value: boolean) => {
-      settings.value.useFixedScale = value
-      saveSettings()
-    }
-  })
-
-  const toggleShowCharts = () => {
-    showCharts.value = !showCharts.value
-  }
-
-  const toggleThresholdLines = () => {
-    showThresholdLines.value = !showThresholdLines.value
-  }
-
-  const toggleColorThresholds = () => {
-    colorThresholds.value = !colorThresholds.value
-  }
-
-  const toggleAlertThresholds = () => {
-    showAlertThresholds.value = !showAlertThresholds.value
-  }
-
-  const toggleMinimalMode = () => {
-    minimalMode.value = !minimalMode.value
-  }
-  
-  const toggleFixedScale = () => {
-    useFixedScale.value = !useFixedScale.value
-  }
+  // ... (other setters)
 
   return {
     showCharts,
-    showThresholdLines,
-    colorThresholds,
-    showAlertThresholds,
-    minimalMode,
+    // ...
     graphDuration,
-    useFixedScale,
-    toggleShowCharts,
-    toggleThresholdLines,
-    toggleColorThresholds,
-    toggleAlertThresholds,
-    toggleMinimalMode,
-    toggleFixedScale
+    useFixedScale: computed({
+      get: () => settings.value.useFixedScale,
+      set: (val) => { settings.value.useFixedScale = val; saveSettings() }
+    }),
+
+    // Default immediate exports ...
+    showThresholdLines: computed(() => false),
+    colorThresholds: computed({
+      get: () => settings.value.colorThresholds,
+      set: (val) => { settings.value.colorThresholds = val; saveSettings() }
+    }),
+    showAlertThresholds: computed({
+      get: () => settings.value.showAlertThresholds,
+      set: (val) => { settings.value.showAlertThresholds = val; saveSettings() }
+    }),
+    minimalMode: computed({
+      get: () => settings.value.minimalMode,
+      set: (val) => { settings.value.minimalMode = val; saveSettings() }
+    }),
+
+    // Toggles ...
+    toggleShowCharts: () => { showCharts.value = !showCharts.value },
+    toggleThresholdLines: () => { },
+    toggleColorThresholds: () => { settings.value.colorThresholds = !settings.value.colorThresholds; saveSettings() },
+    toggleAlertThresholds: () => { settings.value.showAlertThresholds = !settings.value.showAlertThresholds; saveSettings() },
+    toggleMinimalMode: () => { settings.value.minimalMode = !settings.value.minimalMode; saveSettings() },
+    toggleFixedScale: () => { settings.value.useFixedScale = !settings.value.useFixedScale; saveSettings() },
+
+    // EXPOSE DEBOUNCED VALUES FOR CHARTS
+    debouncedGraphDuration: readonly(debouncedGraphDuration),
+    debouncedColorThresholds: readonly(debouncedColorThresholds),
+    debouncedUseFixedScale: readonly(debouncedUseFixedScale)
   }
 }

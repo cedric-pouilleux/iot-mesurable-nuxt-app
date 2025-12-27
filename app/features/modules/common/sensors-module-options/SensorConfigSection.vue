@@ -1,10 +1,10 @@
 <template>
   <div class="col-span-6 lg:col-span-3 flex flex-col space-y-3">
-    <UIPanel title="Configuration des Capteurs">
+    <UIPanel :title="$t('modules.sensorConfig.title')">
       <template #options>
         <template v-if="dbSize">
            <div class="flex items-center gap-2">
-            <UITooltip text="Espace occupé en base de donnée (données capteurs)">
+            <UITooltip :text="$t('modules.sensorConfig.dbSizeTooltip')">
               <UITag variant="blue" size="xs" icon="tabler:database">
                 {{ formatBytes(dbSize.totalSizeBytes) }}
               </UITag>
@@ -17,9 +17,9 @@
         <UITagList
           v-if="projectionsData"
           :items="[
-            { label: `${formatBytes(projectionsData.daily)}/j`, tooltip: 'Estimation par jour' },
-            { label: `${formatBytes(projectionsData.monthly)}/m`, tooltip: 'Estimation par mois' },
-            { label: `${formatBytes(projectionsData.yearly)}/an`, tooltip: 'Estimation par an' }
+            { label: `${formatBytes(projectionsData.daily)}/${$t('modules.sensorConfig.daily')}`, tooltip: $t('modules.sensorConfig.projectionTooltip', { period: $t('modules.sensorConfig.daily') }) },
+            { label: `${formatBytes(projectionsData.monthly)}/${$t('modules.sensorConfig.monthly')}`, tooltip: $t('modules.sensorConfig.projectionTooltip', { period: $t('modules.sensorConfig.monthly') }) },
+            { label: `${formatBytes(projectionsData.yearly)}/${$t('modules.sensorConfig.yearly')}`, tooltip: $t('modules.sensorConfig.projectionTooltip', { period: $t('modules.sensorConfig.yearly') }) }
           ]"
         />
       </template>
@@ -39,7 +39,7 @@
         
         <!-- Empty State --> 
         <div v-if="hardwareSensorList.length === 0" class="p-4 text-center text-xs text-gray-400">
-          Aucun capteur détecté
+          {{ $t('modules.sensorConfig.noSensors') }}
         </div>
       </div>
     </UIPanel>
@@ -83,6 +83,8 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+
+const { t } = useI18n()
 
 // Storage Logic (legacy kept for projections)
 const moduleIdRef = toRef(props, 'moduleId')

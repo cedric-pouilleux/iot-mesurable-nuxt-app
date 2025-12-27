@@ -332,35 +332,46 @@ const unit = computed(() => activeSensor.value ? getUnit(activeSensor.value.key)
 // Title Logic
 // ============================================================================
 
+const { t } = useI18n()
+
 const currentTitle = computed(() => {
-  // For PM: use the sensor label (PM1.0, PM2.5, etc.)
-  if (props.label === 'Particules fines' && activeSensor.value?.sensorLabel) {
-    return activeSensor.value.sensorLabel
-  }
-  
-  if (props.sensors.length <= 1) return props.label
-  
-  // For CO2: show CO2 or eCO2 based on selected sensor
-  if (props.label === 'CO2' && activeSensor.value?.sensorLabel) {
-    return activeSensor.value.sensorLabel
-  }
-  
-  // For COV: show COV or TCOV based on selected sensor
-  if (props.label === 'COV' && activeSensor.value?.sensorLabel) {
-    return activeSensor.value.sensorLabel
+  // Helper to translate sensor type
+  const translateType = (key: string) => {
+    const type = getSensorTypeFromKey(key)
+    return t(`sensors.${type}`)
   }
 
-  // For Temperature/Humidity: keep the group label
-  if (props.label === 'Température' || props.label === 'Humidité') {
-    return props.label
+  // Helper to translate specific hardcoded labels if they match keys
+  // This handles cases where we might have just a label string
+  const translateLabel = (label: string) => {
+    // Try to find matching key in SENSORS config by label (reverse lookup)
+    // Or just check known labels
+    if (label === 'Température') return t('sensors.temperature')
+    if (label === 'Humidité') return t('sensors.humidity')
+    if (label === 'Pression') return t('sensors.pressure')
+    if (label === 'CO2') return t('sensors.co2')
+    if (label === 'COV') return t('sensors.voc')
+    if (label === 'Particules fines') return t('sensors.pm25') // Generic PM
+    return label
   }
 
-  // Default: use sensor label if different from group label
-  if (activeSensor.value?.sensorLabel && activeSensor.value.sensorLabel !== props.label) {
-    return activeSensor.value.sensorLabel
+  // Use the active sensor key to determine the title
+  if (activeSensor.value) {
+    // For PM: show specific PM type 
+    if (activeSensor.value.key.includes('pm')) {
+      return translateType(activeSensor.value.key)
+    }
+    
+    // For CO2/VOC: specific types
+    if (activeSensor.value.key.includes('co2') || activeSensor.value.key.includes('voc')) {
+      return translateType(activeSensor.value.key)
+    }
+
+    // Default to the translated label of the sensor type
+    return translateType(activeSensor.value.key)
   }
-  
-  return activeSensor.value?.sensorLabel || props.label
+
+  return translateLabel(props.label)
 })
 
 // ============================================================================
@@ -394,6 +405,8 @@ const statusColor = computed(() => {
 })
 const statusTooltip = computed(() => {
   const model = activeSensor.value?.model || activeSensor.value?.label || 'Capteur'
+  const statusText = currentStatus.value.text === 'OK' ? t('common.success') : t('error.generic')
+  // We should probably add specific status translations
   return `${model}: ${currentStatus.value.text}`
 })
 </script>

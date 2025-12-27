@@ -16,7 +16,7 @@
       <div
         class="animate-spin w-8 h-8 border-2 border-gray-300 border-t-emerald-500 rounded-full mx-auto mb-4"
       ></div>
-      Chargement de {{ moduleName }}...
+      {{ $t('loading.default') }} {{ moduleName }}...
     </div>
 
     <template v-else-if="props.deviceStatus">
@@ -125,7 +125,7 @@ const selectedGraphActiveSensor = ref<string | null>(null) // Active sensor from
 const isToggling = ref(false)
 
 import { useChartSettings } from '~/features/modules/common/sensors-module-options/composables'
-const { graphDuration } = useChartSettings()
+const { debouncedGraphDuration: graphDuration } = useChartSettings()
 
 // Track active sensor per group type (updated by UnifiedSensorCard)
 const activeSensorByGroup = reactive<Record<string, string>>({})

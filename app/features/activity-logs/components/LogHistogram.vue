@@ -470,7 +470,17 @@ const fetchHistogram = async () => {
   }
 }
 
-watch(() => [props.range, props.filters], fetchHistogram, { deep: true, immediate: true })
+// Split watchers to debounce search
+let searchTimeout: NodeJS.Timeout | null = null
+
+watch(() => props.filters.search, () => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    fetchHistogram()
+  }, 500)
+})
+
+watch(() => [props.range, props.filters.category, props.filters.level], fetchHistogram, { deep: true, immediate: true })
 </script>
 
 <style scoped>

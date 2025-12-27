@@ -24,7 +24,7 @@
           <!-- Close button -->
           <UIButton
             icon="tabler:x"
-            label="Fermer"
+            :label="$t('common.close')"
             variant="ghost"
             size="middle"
             :clickable="true"

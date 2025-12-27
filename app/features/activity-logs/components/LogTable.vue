@@ -3,7 +3,7 @@
     <!-- Loading State -->
     <div v-if="loading" class="p-8 text-center">
       <div class="animate-spin w-8 h-8 border-2 border-gray-300 border-t-emerald-500 rounded-full mx-auto mb-4"></div>
-      <p class="text-gray-500 dark:text-gray-400">Chargement des logs...</p>
+      <p class="text-gray-500 dark:text-gray-400">{{ $t('logs.loading') }}</p>
     </div>
 
     <!-- Error State -->
@@ -13,13 +13,13 @@
         class="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
         @click="$emit('retry')"
       >
-        Réessayer
+        {{ $t('common.retry') }}
       </button>
     </div>
 
     <!-- Empty State -->
     <div v-else-if="logs.length === 0" class="p-8 text-center text-gray-500 dark:text-gray-400">
-      Aucun log trouvé
+      {{ $t('logs.empty') }}
     </div>
 
     <!-- Logs Table -->
@@ -39,7 +39,7 @@
                 :name="log.source === 'USER' ? 'tabler:user' : 'tabler:settings'" 
                 class="w-4 h-4"
                 :class="log.source === 'USER' ? 'text-indigo-500' : 'text-slate-400'"
-                :title="log.source === 'USER' ? 'Action utilisateur' : 'Système'"
+                :title="log.source === 'USER' ? $t('logs.source.user') : $t('logs.source.system')"
               />
             </td>
             <td class="text-center">
@@ -48,7 +48,7 @@
                 :name="log.direction === 'OUT' ? 'tabler:broadcast' : 'tabler:antenna'" 
                 class="w-4 h-4"
                 :class="log.direction === 'OUT' ? 'text-orange-500' : 'text-cyan-500'"
-                :title="log.direction === 'OUT' ? 'Envoi' : 'Réception'"
+                :title="log.direction === 'OUT' ? $t('logs.direction.out') : $t('logs.direction.in')"
               />
             </td>
             <td class="whitespace-nowrap">
@@ -99,7 +99,7 @@
                 v-if="log.details && Object.keys(log.details).length > 0"
                 @click="$emit('openDetails', log)"
                 class="p-1.5 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
-                title="Voir les détails"
+                :title="$t('common.viewDetails')"
               >
                 <Icon name="tabler:code" class="w-4 h-4" />
               </button>

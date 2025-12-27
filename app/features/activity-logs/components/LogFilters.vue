@@ -31,7 +31,7 @@
     <button
       @click="$emit('delete')"
       class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-      title="Vider les logs"
+      :title="$t('logs.deleteAll')"
     >
       <Icon name="tabler:trash" class="w-4 h-4" />
     </button>

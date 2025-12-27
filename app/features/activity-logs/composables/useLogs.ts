@@ -7,13 +7,21 @@ export function useLogs() {
     const loading = ref(false)
     const error = ref<string | null>(null)
 
+    const route = useRoute()
+
+    // Helper to parse query params
+    const getQueryArray = (param: string | string[] | undefined | null): string[] => {
+        if (!param) return []
+        return Array.isArray(param) ? (param as string[]) : [param as string]
+    }
+
     const filters = ref<LogFilters>({
-        categories: [],
-        source: '',
-        direction: '',
-        levels: [],
-        search: '',
-        limit: '100',
+        categories: getQueryArray(route.query.category),
+        source: (route.query.source as any) || '',
+        direction: (route.query.direction as any) || '',
+        levels: getQueryArray(route.query.level) as any,
+        search: (route.query.search as string) || '',
+        limit: (route.query.limit as string) || '100',
     })
 
     const timeRange = ref('24h')
@@ -94,13 +102,26 @@ export function useLogs() {
     }
 
     // Watch filters to reload
+    // Watch search with debounce
+    let searchTimeout: NodeJS.Timeout | null = null
+    watch(
+        () => filters.value.search,
+        () => {
+            if (searchTimeout) clearTimeout(searchTimeout)
+            searchTimeout = setTimeout(() => {
+                resetOffset()
+                loadLogs()
+            }, 500)
+        }
+    )
+
+    // Watch other filters immediately
     watch(
         () => [
             filters.value.categories,
             filters.value.levels,
             filters.value.source,
             filters.value.direction,
-            filters.value.search,
             filters.value.limit,
         ],
         () => {

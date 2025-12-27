@@ -2,9 +2,9 @@
   <div class="col-span-6 md:col-span-3 lg:col-span-1 flex flex-col justify-between space-y-3">
     
     <!-- Hardware Section -->
-    <UIPanel title="Hardware">
+    <UIPanel :title="$t('modules.deviceInfo.hardware')">
       <template #options>
-        <UITooltip :text="'Uptime: ' + formattedUptime" position="left">
+        <UITooltip :text="$t('modules.deviceInfo.uptime') + ': ' + formattedUptime" position="left">
           <div 
             class="w-2.5 h-2.5 rounded-full cursor-help"
             :class="isOnline ? 'bg-green-500' : 'bg-red-500'"
@@ -22,9 +22,9 @@
     </UIPanel>
 
     <!-- Network Section -->
-    <UIPanel title="Réseau">
+    <UIPanel :title="$t('modules.deviceInfo.network')">
       <template #options>
-        <UITooltip :text="`Signal: ${rssi || '--'} dBm`" position="left">
+        <UITooltip :text="`${$t('modules.deviceInfo.signal')}: ${rssi || '--'} dBm`" position="left">
           <div class="cursor-help">
             <Icon v-if="!rssi" name="tabler:wifi-off" class="w-5 h-5" :class="rssiClass" />
             <Icon v-else-if="rssi > -60" name="tabler:wifi" class="w-5 h-5" :class="rssiClass" />
@@ -37,11 +37,11 @@
 
       <div class="text-xs space-y-0.5">
         <div class="flex justify-between">
-          <span class="text-gray-500 dark:text-gray-400">IP</span>
+          <span class="text-gray-500 dark:text-gray-400">{{ $t('modules.deviceInfo.ip') }}</span>
           <span class="text-gray-600 dark:text-gray-300 font-mono text-[10px]">{{ ip || '--' }}</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-gray-500 dark:text-gray-400">MAC</span>
+          <span class="text-gray-500 dark:text-gray-400">{{ $t('modules.deviceInfo.mac') }}</span>
           <span class="text-gray-600 dark:text-gray-300 font-mono text-[10px]">{{ mac || '--' }}</span>
         </div>
       </div>
@@ -49,24 +49,30 @@
 
 
     <!-- Memory Section -->
-    <UIPanel title="Mémoire">
+    <UIPanel :title="$t('modules.deviceInfo.memory')">
       <div class="flex gap-4 justify-center">
         <!-- Flash Doughnut -->
         <div class="w-16 h-16 relative">
-          <ClientOnly>
+          <div v-if="!hasData" class="absolute inset-0 flex items-center justify-center">
+             <div class="w-12 h-12 rounded-full border-[3px] border-gray-100 dark:border-gray-700 border-t-blue-500 animate-spin"></div>
+          </div>
+          <ClientOnly v-else>
             <Doughnut :data="flashChartData" :options="doughnutOptions" />
           </ClientOnly>
           <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <span class="text-[9px] font-medium text-gray-500 dark:text-gray-400">Flash</span>
+            <span class="text-[9px] font-medium text-gray-500 dark:text-gray-400">{{ $t('modules.deviceInfo.flash') }}</span>
           </div>
         </div>
         <!-- RAM Doughnut -->
         <div class="w-16 h-16 relative">
-          <ClientOnly>
+          <div v-if="!hasData" class="absolute inset-0 flex items-center justify-center">
+             <div class="w-12 h-12 rounded-full border-[3px] border-gray-100 dark:border-gray-700 border-t-purple-500 animate-spin"></div>
+          </div>
+          <ClientOnly v-else>
             <Doughnut :data="ramChartData" :options="doughnutOptions" />
           </ClientOnly>
           <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <span class="text-[9px] font-medium text-gray-500 dark:text-gray-400">RAM</span>
+            <span class="text-[9px] font-medium text-gray-500 dark:text-gray-400">{{ $t('modules.deviceInfo.ram') }}</span>
           </div>
         </div>
       </div>
@@ -86,12 +92,16 @@ if (process.client) {
   ChartJS.register(ArcElement, Tooltip, Legend)
 }
 
+const { t } = useI18n()
+
 interface Props {
   deviceStatus: DeviceStatus | null
   moduleId: string
 }
 
 const props = defineProps<Props>()
+
+const hasData = computed(() => (props.deviceStatus?.system?.memory?.heapTotalKb || 0) > 0)
 
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
@@ -164,6 +174,10 @@ const ramPercentages = computed(() => {
 })
 
 // Custom Tooltip Handler from original code
+// NOTE: We need to access 't' inside this handler locally or via scope. 
+// Since 't' is available in setup scope, we can use it, BUT chartoptions object is defining external handler reference.
+// We must wrap it or make it reactive to locale changes if possible.
+// For now, simpler: use translated LABELS in datasets so we can read them back from tooltip item.
 const externalTooltipHandler = (context: any) => {
   // Tooltip Element
   let tooltipEl = document.getElementById('chartjs-tooltip')
@@ -204,33 +218,44 @@ const externalTooltipHandler = (context: any) => {
       // Get the raw value and formatted text based on label
       let text = ''
       
-      if (label === 'Sketch') {
-        const kb = flashPercentages.value.usedKb
-        text = `${label}: ${formatKb(kb)} (${Math.round(dataPoint.raw)}%)`
-      } else if (label === 'OTA') {
-        const kb = flashPercentages.value.freeKb // Note: 'free' in flash usually means OTA space in ESP32 context of this app? Or is it inverted? 
-        // Checking original: OTA was mapping to 'free' in flash structure usually? 
-        // Actually original used: otaTooltip = computed(() => `OTA: ${formatKb(kb)}`) where kb = props.deviceStatus?.system?.flash?.freeKb
-        // So yes, flash.freeKb corresponds to OTA partition space usually or just free space.
-        // Let's stick to variable names.
-        text = `${label}: ${formatKb(kb)} (${Math.round(dataPoint.raw)}%)`
-      } else if (label === 'System') {
-        const kb = flashPercentages.value.systemKb
-        text = `${label}: ${formatKb(kb)} (${Math.round(dataPoint.raw)}%)`
-      } else if (label === 'Libre') { // Flash Free
-        // This is actually the remaining space not covered by partitions? 
-        // Original logic: freePercent = 100 - others.
-        // It seems 'Libre' here is just visual filler for 100%?
-        // Let's just show %.
-        text = `${label}: ${Math.round(dataPoint.raw)}%`
-      } else if (label === 'Utilisé') { // RAM Used
-        const kb = ramPercentages.value.usedKb
-        text = `${label}: ${formatKb(kb)} (${Math.round(dataPoint.raw)}%)`
-      } else if (label === 'Disponible') { // RAM Free
-        const kb = ramPercentages.value.freeKb
-        text = `${label}: ${formatKb(kb)} (${Math.round(dataPoint.raw)}%)`
+      // We compare against translated labels now!
+      // This is brittle if translation changes format. 
+      // Better: check the dataset index OR data index? 
+      // Don't rely on label string matching 'Sketch' etc.
+      // Flash Chart: 0=Sketch, 1=OTA, 2=System, 3=Free
+      // RAM Chart: 0=Used, 1=Free
+      
+      // How to know which chart? context.chart.canvas...
+      // But we can check labels.
+      
+      // Re-implement logic using data index
+      const dataIndex = dataPoint.dataIndex
+      
+      if (label === t('modules.deviceInfo.sketch') || dataPoint.dataset.labels?.[0] === t('modules.deviceInfo.sketch')) {
+           // Assume Flash chart if 4 items? Or just check values.
+           if (flashChartData.value.labels.includes(label)) {
+              if (dataIndex === 0) { // Sketch
+                   const kb = flashPercentages.value.usedKb
+                   text = `${label}: ${formatKb(kb)} (${Math.round(dataPoint.raw)}%)`
+              } else if (dataIndex === 1) { // OTA
+                   const kb = flashPercentages.value.freeKb
+                   text = `${label}: ${formatKb(kb)} (${Math.round(dataPoint.raw)}%)`
+              } else if (dataIndex === 2) { // System
+                   const kb = flashPercentages.value.systemKb
+                   text = `${label}: ${formatKb(kb)} (${Math.round(dataPoint.raw)}%)`
+              } else { // Free
+                   text = `${label}: ${Math.round(dataPoint.raw)}%`
+              }
+           }
       } else {
-        text = `${label}: ${Math.round(dataPoint.raw)}%`
+           // Assume RAM chart
+           if (dataIndex === 0) { // Used
+                const kb = ramPercentages.value.usedKb
+                text = `${label}: ${formatKb(kb)} (${Math.round(dataPoint.raw)}%)`
+           } else { // Free
+                const kb = ramPercentages.value.freeKb
+                text = `${label}: ${formatKb(kb)} (${Math.round(dataPoint.raw)}%)`
+           }
       }
       
       tooltipEl.textContent = text
@@ -250,7 +275,12 @@ const externalTooltipHandler = (context: any) => {
 
 // Chart data
 const flashChartData = computed(() => ({
-  labels: ['Sketch', 'OTA', 'System', 'Libre'],
+  labels: [
+    t('modules.deviceInfo.sketch'), 
+    t('modules.deviceInfo.ota'), 
+    t('modules.deviceInfo.system'), 
+    t('modules.deviceInfo.free')
+  ],
   datasets: [{
     data: [
       flashPercentages.value.sketchPercent,
@@ -266,7 +296,10 @@ const flashChartData = computed(() => ({
 }))
 
 const ramChartData = computed(() => ({
-  labels: ['Utilisé', 'Disponible'],
+  labels: [
+    t('modules.deviceInfo.used'), 
+    t('modules.deviceInfo.available')
+  ],
   datasets: [{
     data: [
       ramPercentages.value.usedPercent,
@@ -287,7 +320,8 @@ const doughnutOptions = {
     tooltip: { 
       enabled: false, // Disable default canvas tooltip
       external: externalTooltipHandler
-    }
+    },
+    annotation: { annotations: {} }
   },
   cutout: '65%' // Thinner ring like original
 }

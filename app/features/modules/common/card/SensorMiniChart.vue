@@ -63,7 +63,7 @@ defineEmits<{
 }>()
 
 const { getThresholdColor, getThresholdDefinition } = useThresholds()
-const { showCharts, showThresholdLines, colorThresholds, useFixedScale } = useChartSettings()
+const { showCharts, showThresholdLines, debouncedColorThresholds: colorThresholds, debouncedUseFixedScale: useFixedScale } = useChartSettings()
 
 // Color mapping
 const colorMap: Record<string, string> = {
