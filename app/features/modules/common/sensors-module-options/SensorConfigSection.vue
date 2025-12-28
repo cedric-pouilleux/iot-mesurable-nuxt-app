@@ -35,6 +35,7 @@
             'border-b border-dashed border-gray-200 dark:border-gray-700 pb-1 mb-1': index < hardwareSensorList.length - 1
           }"
           @interval-change="onIntervalChange"
+          @enabled-change="fetchStorageStats"
         />
         
         <!-- Empty State --> 

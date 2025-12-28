@@ -101,7 +101,11 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const hasData = computed(() => (props.deviceStatus?.system?.memory?.heapTotalKb || 0) > 0)
+const hasData = computed(() => {
+  const hasRam = (props.deviceStatus?.system?.memory?.heapTotalKb || 0) > 0
+  const hasFlash = (props.deviceStatus?.hardware?.chip?.flashKb || 0) > 0
+  return hasRam && hasFlash
+})
 
 const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
@@ -142,7 +146,13 @@ const flashPercentages = computed(() => {
   const total = props.deviceStatus?.hardware?.chip?.flashKb || 0
   const used = props.deviceStatus?.system?.flash?.usedKb || 0
   const free = props.deviceStatus?.system?.flash?.freeKb || 0
-  const system = props.deviceStatus?.system?.flash?.systemKb || 0
+  
+  // If system is reported as 0, calculate it as the remainder (Total - Used - Free)
+  // This ensures the "System" (Yellow) slice takes the "gap" instead of "Free" (Grey)
+  let system = props.deviceStatus?.system?.flash?.systemKb || 0
+  if (total > 0 && system === 0) {
+    system = Math.max(0, total - used - free)
+  }
   
   if (total === 0) return { sketchPercent: 0, otaPercent: 0, systemPercent: 0, freePercent: 100 }
   

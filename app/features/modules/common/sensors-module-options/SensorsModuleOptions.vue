@@ -70,6 +70,7 @@ watch(() => props.isOpen, (isOpen) => {
   display: grid;
   grid-template-rows: 0fr;
   transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden; /* Prevent content from being interactive when closed */
 }
 
 .options-wrapper.is-open {
@@ -79,14 +80,16 @@ watch(() => props.isOpen, (isOpen) => {
 .options-content {
   min-height: 0;
   opacity: 0;
-  /* Fast opacity fade-out on close (no delay) */
-  transition: opacity 0.1s ease-out;
+  visibility: hidden;
+  /* Close: fade out opacity, then hide visibility */
+  transition: opacity 0.1s ease-out, visibility 0s 0.1s;
 }
 
 .options-wrapper.is-open .options-content {
   opacity: 1;
+  visibility: visible;
   padding-bottom: 1.25rem;
-  /* Slower fade-in with delay on open */
-  transition: opacity 0.3s ease-out 0.15s;
+  /* Open: show visibility immediately, then fade in opacity */
+  transition: opacity 0.3s ease-out 0.15s, visibility 0s 0s;
 }
 </style>

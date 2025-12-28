@@ -232,6 +232,7 @@ const timeAgo = useTimeAgo(() => {
 
 const emit = defineEmits<{
   'interval-change': [hardwareKey: string, interval: number]
+  'enabled-change': [hardwareKey: string, enabled: boolean]
 }>()
 
 watch(() => props.hardware.interval, (newVal) => {
@@ -284,8 +285,8 @@ const resetSensor = async () => {
   if (resetting.value) return
   resetting.value = true
   
-  // Use first measurement key as the sensor identifier
-  const sensorKey = props.hardware.measurements[0]?.key
+  // Use hardware identifier to reset the whole module
+  const sensorKey = props.hardware.hardwareKey
   if (!sensorKey) {
     showSnackbar('Aucun capteur à reset', 'error')
     resetting.value = false
@@ -329,14 +330,19 @@ const toggleEnabled = async () => {
   // No loading state for instant feedback
   
   try {
-     const endpoint = newState 
-       ? `/api/modules/${props.moduleId}/hardware/${props.hardware.hardwareKey}/enable`
-       : `/api/modules/${props.moduleId}/hardware/${props.hardware.hardwareKey}/disable`
+     const endpoint = `/api/modules/${props.moduleId}/hardware/enable`
        
-     await $fetch(endpoint, { method: 'POST' })
+     await $fetch(endpoint, { 
+       method: 'POST',
+       body: {
+         hardware: props.hardware.hardwareKey,
+         enabled: newState
+       }
+     })
      
      // Success notification
      showSnackbar(newState ? 'Capteur activé' : 'Capteur désactivé', 'success')
+     emit('enabled-change', props.hardware.hardwareKey, newState)
      
      // Note: Parent component (SensorConfigSection) polls or listens to events to update global state.
      // Since we updated local isEnabled, the UI is correct immediately.

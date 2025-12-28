@@ -126,6 +126,7 @@ import {
 } from 'chart.js'
 import { Line } from 'vue-chartjs'
 import 'chartjs-adapter-date-fns'
+import annotationPlugin from 'chartjs-plugin-annotation'
 import { getSensorRange, getNormalizationRatio } from '../config/sensors'
 import SensorCardOpen from './SensorCardOpen.vue'
 import UITooltip from '~/components/design-system/UITooltip/UITooltip.vue'
@@ -138,7 +139,9 @@ if (process.client) {
     LineElement,
     TimeScale,
     Filler,
-    Tooltip
+    Filler,
+    Tooltip,
+    annotationPlugin
   )
 }
 
@@ -175,8 +178,15 @@ const emit = defineEmits<{
 }>()
 
 // Import useDashboard for loading data with specific bucket
+import { useThresholds } from '~/features/modules/common/card/composables'
+import { useChartSettings } from '~/features/modules/common/sensors-module-options/composables'
+
+// Import useDashboard for loading data with specific bucket
 import { useDashboard } from '~/composables/useDashboard'
 const { loadHistory } = useDashboard()
+
+const { getThresholdDefinition } = useThresholds()
+const { showThresholdLines } = useChartSettings()
 
 // Local state for graph-specific data (separate from mini-cards)
 const localHistoryMap = ref<Record<string, SensorDataPoint[]>>({})
@@ -555,6 +565,26 @@ const chartData = computed<ChartData<'line'> | null>(() => {
         y: m.value / ratio 
       }))
       
+      // Calculate gaps for this specific sensor's data
+      const timeGaps: number[] = []
+      for (let i = 1; i < sortedData.length; i++) {
+        const t1 = sortedData[i-1].time instanceof Date ? sortedData[i-1].time.getTime() : new Date(sortedData[i-1].time).getTime()
+        const t2 = sortedData[i].time instanceof Date ? sortedData[i].time.getTime() : new Date(sortedData[i].time).getTime()
+        timeGaps.push(t2 - t1)
+      }
+      
+      const medianGap = timeGaps.length > 0 ? timeGaps.sort((a, b) => a - b)[Math.floor(timeGaps.length / 2)] : 60000
+      const gapThreshold = Math.max(medianGap * 5, 10 * 60 * 1000) // 10 min minimum
+
+      const gapIndices = new Set<number>()
+      for (let i = 1; i < sortedData.length; i++) {
+        const t1 = sortedData[i-1].time instanceof Date ? sortedData[i-1].time.getTime() : new Date(sortedData[i-1].time).getTime()
+        const t2 = sortedData[i].time instanceof Date ? sortedData[i].time.getTime() : new Date(sortedData[i].time).getTime()
+        if (t2 - t1 > gapThreshold) {
+          gapIndices.add(i - 1)
+        }
+      }
+
       datasets.push({
         label: sensor ? getSensorDisplayLabel(sensor) : sensorKey,
         backgroundColor: hexToRgba(color, 0.1),
@@ -570,6 +600,10 @@ const chartData = computed<ChartData<'line'> | null>(() => {
         pointHoverBorderColor: color,
         hitRadius: 8,
         spanGaps: true,
+        segment: {
+          borderDash: (ctx: { p0DataIndex: number }) => gapIndices.has(ctx.p0DataIndex) ? [6, 6] : undefined,
+          borderColor: (ctx: { p0DataIndex: number }) => gapIndices.has(ctx.p0DataIndex) ? hexToRgba(color, 0.4) : undefined,
+        },
       })
     }
     
@@ -688,7 +722,49 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
   },
   plugins: {
     legend: { display: false },
-    annotation: { annotations: {} },
+    annotation: {
+      annotations: (() => {
+        // Only show thresholds if enabled globally AND only one sensor is selected
+        if (!showThresholdLines.value || selectedSensorKeys.value.size !== 1) {
+          return {}
+        }
+
+        const sensorKey = Array.from(selectedSensorKeys.value)[0]
+        const thresholds = getThresholdDefinition(sensorKey)
+        
+        if (!thresholds) return {}
+
+        return {
+          moderateLine: {
+            type: 'line',
+            yMin: thresholds.good,
+            yMax: thresholds.good,
+            borderColor: 'rgba(245, 158, 11, 0.6)',
+            borderWidth: 1,
+            borderDash: [4, 4],
+            label: { display: false }
+          },
+          poorLine: {
+            type: 'line',
+            yMin: thresholds.moderate,
+            yMax: thresholds.moderate,
+            borderColor: 'rgba(249, 115, 22, 0.6)',
+            borderWidth: 1,
+            borderDash: [4, 4],
+            label: { display: false }
+          },
+          hazardousLine: {
+            type: 'line',
+            yMin: thresholds.poor,
+            yMax: thresholds.poor,
+            borderColor: 'rgba(239, 68, 68, 0.6)',
+            borderWidth: 1,
+            borderDash: [4, 4],
+            label: { display: false }
+          }
+        }
+      })()
+    },
     tooltip: {
       enabled: true,
       backgroundColor: '#111827',
