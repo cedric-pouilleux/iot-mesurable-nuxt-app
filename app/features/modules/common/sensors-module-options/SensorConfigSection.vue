@@ -35,7 +35,7 @@
             'border-b border-dashed border-gray-200 dark:border-gray-700 pb-1 mb-1': index < hardwareSensorList.length - 1
           }"
           @interval-change="onIntervalChange"
-          @enabled-change="fetchStorageStats"
+          @enabled-change="onEnabledChange"
         />
         
         <!-- Empty State --> 
@@ -210,17 +210,34 @@ const hardwareSensorList = computed<HardwareData[]>(() => {
 // HARDWARE_SENSORS config maps hardwareKey -> measurements (list of sensor types).
 // So when hardware 'mhz19' changes to 60s, ALL its measurements (co2, temp) change to 60s.
 const intervalOverrides = ref<Record<string, number>>({})
+const enabledOverrides = ref<Record<string, boolean>>({})
 
-const onIntervalChange = (hardwareKey: string, newInterval: number) => {
-  // Find which hardware definition corresponds to this key
+const updateOverrides = <T>(
+  hardwareKey: string, 
+  value: T, 
+  targetMap: Record<string, T>
+) => {
   const hwDef = HARDWARE_SENSORS.find(h => h.hardwareKey === hardwareKey)
   if (!hwDef) return
-  
-  // Update all sensor types for this hardware
+
   hwDef.measurements.forEach(sensorType => {
-    intervalOverrides.value[sensorType] = newInterval
+    // Support both simple and composite keys to match potential backend formats
+    targetMap[sensorType] = value
+    targetMap[`${hardwareKey}:${sensorType}`] = value
   })
 }
 
-const projectionsData = projections(intervalOverrides)
+const onIntervalChange = (hardwareKey: string, newInterval: number) => {
+  updateOverrides(hardwareKey, newInterval, intervalOverrides.value)
+}
+
+const onEnabledChange = (hardwareKey: string, isEnabled: boolean) => {
+  // Fetch new valid state from server
+  fetchStorageStats()
+  
+  // Optimistically update overrides for live projection
+  updateOverrides(hardwareKey, isEnabled, enabledOverrides.value)
+}
+
+const projectionsData = projections(intervalOverrides, enabledOverrides)
 </script>

@@ -577,6 +577,7 @@ const chartData = computed<ChartData<'line'> | null>(() => {
       const gapThreshold = Math.max(medianGap * 5, 10 * 60 * 1000) // 10 min minimum
 
       const gapIndices = new Set<number>()
+      // Calculate gaps for this specific sensor's data
       for (let i = 1; i < sortedData.length; i++) {
         const t1 = sortedData[i-1].time instanceof Date ? sortedData[i-1].time.getTime() : new Date(sortedData[i-1].time).getTime()
         const t2 = sortedData[i].time instanceof Date ? sortedData[i].time.getTime() : new Date(sortedData[i].time).getTime()

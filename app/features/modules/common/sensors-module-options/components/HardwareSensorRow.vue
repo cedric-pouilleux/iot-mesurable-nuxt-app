@@ -259,10 +259,14 @@ const saveInterval = async () => {
     saving.value = true
     
     try {
-      await $fetch(`/api/modules/${props.moduleId}/hardware/${props.hardware.hardwareKey}/config`, {
-        method: 'PATCH',
+      await $fetch(`/api/modules/${props.moduleId}/config`, {
+        method: 'POST',
         body: { 
-           interval: localInterval.value
+           sensors: {
+             [props.hardware.hardwareKey]: {
+               interval: localInterval.value
+             }
+           }
         }
       })
       showSnackbar('Intervalle sauvegardé', 'success')
