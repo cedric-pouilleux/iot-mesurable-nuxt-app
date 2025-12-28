@@ -55,7 +55,6 @@ import UITooltip from '~/components/design-system/UITooltip/UITooltip.vue'
 import UIPanel from '~/components/design-system/UIPanel/UIPanel.vue'
 import UITagList from '~/components/design-system/UITagList/UITagList.vue'
 import { HARDWARE_SENSORS } from './config/hardwareSensors'
-import { useModuleStorage } from './composables/useModuleStorage'
 import type { DeviceStatus, SensorDataPoint } from '../types'
 
 interface Measurement {
@@ -89,7 +88,15 @@ const { t } = useI18n()
 
 // Storage Logic (legacy kept for projections)
 const moduleIdRef = toRef(props, 'moduleId')
-const { projections, fetchStorageStats } = useModuleStorage(moduleIdRef)
+
+// Use new composable for configuration logic
+import { useSensorConfiguration } from './composables/useSensorConfiguration'
+const { 
+  projectionsData, 
+  updateInterval, 
+  updateEnabled,
+  fetchStorageStats 
+} = useSensorConfiguration(moduleIdRef)
 
 onMounted(() => {
   fetchStorageStats()
@@ -205,39 +212,11 @@ const hardwareSensorList = computed<HardwareData[]>(() => {
     })
 })
 
-// Store overrides: Map<SensorType, Interval>
-// HardwareSensorRow emits with HardwareKey (e.g. 'mhz19'). We need to know which sensorTypes this hardware controls.
-// HARDWARE_SENSORS config maps hardwareKey -> measurements (list of sensor types).
-// So when hardware 'mhz19' changes to 60s, ALL its measurements (co2, temp) change to 60s.
-const intervalOverrides = ref<Record<string, number>>({})
-const enabledOverrides = ref<Record<string, boolean>>({})
-
-const updateOverrides = <T>(
-  hardwareKey: string, 
-  value: T, 
-  targetMap: Record<string, T>
-) => {
-  const hwDef = HARDWARE_SENSORS.find(h => h.hardwareKey === hardwareKey)
-  if (!hwDef) return
-
-  hwDef.measurements.forEach(sensorType => {
-    // Support both simple and composite keys to match potential backend formats
-    targetMap[sensorType] = value
-    targetMap[`${hardwareKey}:${sensorType}`] = value
-  })
-}
-
 const onIntervalChange = (hardwareKey: string, newInterval: number) => {
-  updateOverrides(hardwareKey, newInterval, intervalOverrides.value)
+  updateInterval(hardwareKey, newInterval)
 }
 
 const onEnabledChange = (hardwareKey: string, isEnabled: boolean) => {
-  // Fetch new valid state from server
-  fetchStorageStats()
-  
-  // Optimistically update overrides for live projection
-  updateOverrides(hardwareKey, isEnabled, enabledOverrides.value)
+  updateEnabled(hardwareKey, isEnabled)
 }
-
-const projectionsData = projections(intervalOverrides, enabledOverrides)
 </script>
