@@ -304,10 +304,8 @@ const filteredBucketOptions = computed(() => {
 const selectedBucket = ref('auto')
 
 // Handle bucket selection - load data directly from API with selected bucket
-const selectBucket = async (bucket: string) => {
-  if (bucket === selectedBucket.value) return
-  
-  selectedBucket.value = bucket
+// Fetch graph data based on current duration and bucket
+const fetchGraphData = async () => {
   isLoadingBucket.value = true
   
   try {
@@ -315,7 +313,7 @@ const selectBucket = async (bucket: string) => {
     const days = Math.ceil(selectedDurationHours.value / 24) || 1
     
     // Load data with the new bucket directly
-    const newData = await loadHistory(props.moduleId, days, bucket)
+    const newData = await loadHistory(props.moduleId, days, selectedBucket.value)
     
     if (newData) {
       localHistoryMap.value = newData
@@ -327,6 +325,19 @@ const selectBucket = async (bucket: string) => {
     isLoadingBucket.value = false
   }
 }
+
+// Handle bucket selection - load data directly from API with selected bucket
+const selectBucket = async (bucket: string) => {
+  if (bucket === selectedBucket.value) return
+  
+  selectedBucket.value = bucket
+  await fetchGraphData()
+}
+
+// Watch for duration changes to reload data (e.g., switching from 24h to 7d)
+watch(selectedDuration, () => {
+  fetchGraphData()
+})
 
 // Version counter to force Chart.js re-render
 const chartVersion = ref(0)
