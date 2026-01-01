@@ -47,6 +47,7 @@ interface Props {
   sensorKey: string
   label: string
   color: string
+  moduleId: string
   isPanelOpen?: boolean
   isLoading?: boolean
   graphDuration?: string
@@ -63,7 +64,7 @@ defineEmits<{
 }>()
 
 const { getThresholdColor, getThresholdDefinition } = useThresholds()
-const { showCharts, showThresholdLines, debouncedColorThresholds: colorThresholds, debouncedUseFixedScale: useFixedScale } = useChartSettings()
+const { showCharts, showThresholdLines, debouncedColorThresholds: colorThresholds, debouncedUseFixedScale: useFixedScale } = useChartSettings(computed(() => props.moduleId))
 
 // Color mapping
 const colorMap: Record<string, string> = {

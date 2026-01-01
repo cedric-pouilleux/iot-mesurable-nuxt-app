@@ -70,6 +70,10 @@ import UISelect from '~/components/design-system/UISelect/UISelect.vue'
 import UIPanel from '~/components/design-system/UIPanel/UIPanel.vue'
 import UITooltip from '~/components/design-system/UITooltip/UITooltip.vue'
 
+const props = defineProps<{
+  moduleId: string
+}>()
+
 const { 
   showCharts, 
   showThresholdLines, 
@@ -78,5 +82,5 @@ const {
   minimalMode,
   graphDuration,
   useFixedScale
-} = useChartSettings()
+} = useChartSettings(props.moduleId)
 </script>

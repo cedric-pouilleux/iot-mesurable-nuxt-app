@@ -186,7 +186,7 @@ import { useDashboard } from '~/composables/useDashboard'
 const { loadHistory } = useDashboard()
 
 const { getThresholdDefinition } = useThresholds()
-const { showThresholdLines } = useChartSettings()
+const { showThresholdLines } = useChartSettings(computed(() => props.moduleId))
 
 // Local state for graph-specific data (separate from mini-cards)
 const localHistoryMap = ref<Record<string, SensorDataPoint[]>>({})

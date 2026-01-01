@@ -129,13 +129,26 @@ const getUnit = (key: string): string => {
   return ''
 }
 
-// Build hardware sensor list from device status
+// Build hardware sensor list from device status AND manifest
+import { useModuleManifest } from './composables/useModuleManifest'
+
+const moduleType = computed(() => props.deviceStatus?.moduleType)
+const { manifest, isLoading: isManifestLoading } = useModuleManifest(moduleType)
+
 const hardwareSensorList = computed<HardwareData[]>(() => {
   const sensors = props.deviceStatus?.sensors
   const sensorsConfig = props.deviceStatus?.sensorsConfig?.sensors
+  
   if (!sensors) return []
   
-  return HARDWARE_SENSORS
+  // Filter available hardware based on manifest if available
+  let availableHardware = HARDWARE_SENSORS
+  if (manifest.value) {
+    const manifestHardwareKeys = new Set(manifest.value.hardware.map(h => h.key))
+    availableHardware = HARDWARE_SENSORS.filter(hw => manifestHardwareKeys.has(hw.hardwareKey))
+  }
+  
+  return availableHardware
     .map(hw => {
       // Check if any measurement from this hardware exists in history
       const measurements: Measurement[] = hw.measurements

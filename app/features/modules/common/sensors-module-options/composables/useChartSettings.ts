@@ -1,11 +1,6 @@
-/**
- * useChartSettings
- * 
- * Composable for managing chart display preferences.
- * Settings are persisted in localStorage.
- */
+import { ref, watch, computed, readonly, toValue, type Ref, type MaybeRef } from 'vue'
 
-const STORAGE_KEY = 'iot-chart-settings'
+const STORAGE_KEY_PREFIX = 'iot-chart-settings-'
 
 interface ChartSettings {
   showCharts: boolean
@@ -27,64 +22,77 @@ const defaultSettings: ChartSettings = {
   useFixedScale: false
 }
 
-// Global reactive settings
-const settings = ref<ChartSettings>({ ...defaultSettings })
+export function useChartSettings(moduleIdInput: MaybeRef<string> = 'global') {
+  const moduleId = computed(() => toValue(moduleIdInput))
 
-// Load settings from localStorage on init
-const loadSettings = () => {
-  if (import.meta.client) {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        settings.value = { ...defaultSettings, ...JSON.parse(stored) }
+  // State keyed by module ID
+  const settings = useState<ChartSettings>(`chart-settings-${moduleId.value}`, () => ({ ...defaultSettings }))
+
+  // Storage Key
+  const storageKey = computed(() => `${STORAGE_KEY_PREFIX}${moduleId.value}`)
+
+  // Load settings from localStorage on init/change
+  const loadSettings = () => {
+    if (import.meta.client) {
+      try {
+        const stored = localStorage.getItem(storageKey.value)
+        if (stored) {
+          settings.value = { ...defaultSettings, ...JSON.parse(stored) }
+        } else {
+          // Reset to defaults if nothing stored (prevent leaking state if key changes)
+          // Or we can keep it as is.
+        }
+      } catch (e) {
+        console.warn('Failed to load chart settings:', e)
       }
-    } catch (e) {
-      console.warn('Failed to load chart settings:', e)
     }
   }
-}
 
-// Save settings to localStorage
-const saveSettings = () => {
+  // Save settings to localStorage
+  const saveSettings = () => {
+    if (import.meta.client) {
+      try {
+        localStorage.setItem(storageKey.value, JSON.stringify(settings.value))
+      } catch (e) {
+        console.warn('Failed to save chart settings:', e)
+      }
+    }
+  }
+
+  // Initial load
   if (import.meta.client) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings.value))
-    } catch (e) {
-      console.warn('Failed to save chart settings:', e)
+    loadSettings()
+  }
+
+  // Watch for module ID changes to reload settings
+  watch(moduleId, () => {
+    loadSettings()
+  })
+
+  // Debounce logic for expensive chart updates
+  const debouncedGraphDuration = ref(settings.value.graphDuration)
+  const debouncedColorThresholds = ref(settings.value.colorThresholds)
+  const debouncedUseFixedScale = ref(settings.value.useFixedScale)
+
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
+  // Watch for changes and debounce updates
+  watch(
+    () => [settings.value.graphDuration, settings.value.colorThresholds, settings.value.useFixedScale],
+    ([newDuration, newColorThresholds, newFixedScale]) => {
+      if (debounceTimer) clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(() => {
+        debouncedGraphDuration.value = newDuration as string
+        debouncedColorThresholds.value = newColorThresholds as boolean
+        debouncedUseFixedScale.value = newFixedScale as boolean
+      }, 500)
     }
-  }
-}
+  )
 
-// Init on module load
-loadSettings()
-
-// Debounce logic for expensive chart updates
-const debouncedGraphDuration = ref(settings.value.graphDuration)
-const debouncedColorThresholds = ref(settings.value.colorThresholds)
-const debouncedUseFixedScale = ref(settings.value.useFixedScale)
-
-let debounceTimer: ReturnType<typeof setTimeout> | null = null
-
-// Watch for changes and debounce updates
-watch(
-  () => [settings.value.graphDuration, settings.value.colorThresholds, settings.value.useFixedScale],
-  ([newDuration, newColorThresholds, newFixedScale]) => {
-    if (debounceTimer) clearTimeout(debounceTimer)
-    debounceTimer = setTimeout(() => {
-      debouncedGraphDuration.value = newDuration as string
-      debouncedColorThresholds.value = newColorThresholds as boolean
-      debouncedUseFixedScale.value = newFixedScale as boolean
-    }, 500)
-  }
-)
-
-export function useChartSettings() {
   const showCharts = computed({
     get: () => true, // Always show charts in normal mode
     set: () => { } // No-op
   })
-
-  // ... (keep existing computed for UI) ...
 
   const graphDuration = computed({
     get: () => settings.value.graphDuration,

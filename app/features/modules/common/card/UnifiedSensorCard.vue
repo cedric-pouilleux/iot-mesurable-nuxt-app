@@ -102,12 +102,12 @@
           />
         </div>
 
-        <!-- Mini Chart -->
         <SensorMiniChart
           :history="activeHistory"
           :sensorKey="activeSensorKey"
           :label="label"
           :color="color"
+          :moduleId="moduleId"
           :isPanelOpen="isPanelOpen"
           :isLoading="isLoading"
           :graphDuration="graphDuration"
@@ -194,7 +194,7 @@ const {
 // ============================================================================
 
 const { evaluateThreshold, isTrendPositive } = useThresholds()
-const { showCharts, showAlertThresholds, minimalMode } = useChartSettings()
+const { showCharts, showAlertThresholds, minimalMode } = useChartSettings(computed(() => props.moduleId))
 
 // ============================================================================
 // State

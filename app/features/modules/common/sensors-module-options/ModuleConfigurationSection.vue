@@ -5,7 +5,7 @@
       @open-zone-drawer="$emit('open-zone-drawer')"
       @zone-changed="$emit('zone-changed')"
     />
-    <ChartOptionsSection />
+    <ChartOptionsSection :moduleId="moduleId" />
   </div>
 </template>
 
