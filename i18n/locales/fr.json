@@ -30,6 +30,7 @@
         "types": {
             "air-quality": "Qualité d'air",
             "air-quality-bench": "Qualité de l'air (Benchmark)",
+            "air-module-empty": "Module Air Vide",
             "lighting": "Éclairage",
             "climate": "Climat",
             "unknown": "Module inconnu"

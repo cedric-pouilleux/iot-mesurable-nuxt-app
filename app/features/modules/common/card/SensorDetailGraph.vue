@@ -97,7 +97,7 @@
         </template>
         
         <ClientOnly>
-          <Line v-if="chartData" :key="chartVersion" :data="chartData" :options="chartOptions" />
+          <Line v-if="chartData" :key="chartVersion" :data="chartData" :options="chartOptions" :plugins="chartPlugins" />
           <template #fallback>
             <div class="h-full flex items-center justify-center text-[10px] text-gray-300">
               Chargement...
@@ -139,11 +139,11 @@ if (process.client) {
     LineElement,
     TimeScale,
     Filler,
-    Filler,
-    Tooltip,
-    annotationPlugin
+    Tooltip
   )
 }
+
+const chartPlugins = [annotationPlugin]
 
 interface SensorItem {
   key: string

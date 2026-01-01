@@ -257,7 +257,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => {
           }
         }
       },
-      ...(process.client ? { annotation: { annotations } } : {})
+      annotation: { annotations }
     }
   }
 })
