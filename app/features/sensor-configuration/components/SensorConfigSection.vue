@@ -49,13 +49,13 @@
 
 <script setup lang="ts">
 import { computed, toRef, onMounted, watch } from 'vue'
-import HardwareSensorRow from './components/HardwareSensorRow.vue'
+import HardwareSensorRow from './HardwareSensorRow.vue'
 import UITag from '~/components/design-system/UITag/UITag.vue'
 import UITooltip from '~/components/design-system/UITooltip/UITooltip.vue'
 import UIPanel from '~/components/design-system/UIPanel/UIPanel.vue'
 import UITagList from '~/components/design-system/UITagList/UITagList.vue'
-import { HARDWARE_SENSORS } from './config/hardwareSensors'
-import type { DeviceStatus, SensorDataPoint } from '../types'
+import { HARDWARE_SENSORS } from '../config/hardwareSensors'
+import type { DeviceStatus, SensorDataPoint } from '~/features/modules/common/types'
  
 interface Measurement {
   key: string
@@ -88,7 +88,7 @@ const props = defineProps<Props>()
 const moduleIdRef = toRef(props, 'moduleId')
 
 // Use new composable for configuration logic
-import { useSensorConfiguration } from './composables/useSensorConfiguration'
+import { useSensorConfiguration } from '../composables/useSensorConfiguration'
 const { 
   projectionsData, 
   updateInterval, 
@@ -128,7 +128,7 @@ const getUnit = (key: string): string => {
 }
 
 // Build hardware sensor list from device status AND manifest
-import { useModuleManifest } from './composables/useModuleManifest'
+import { useModuleManifest } from '~/features/modules/common/module-panel/composables/useModuleManifest'
 
 const moduleType = computed(() => props.deviceStatus?.moduleType)
 const { manifest, isLoading: isManifestLoading } = useModuleManifest(moduleType)

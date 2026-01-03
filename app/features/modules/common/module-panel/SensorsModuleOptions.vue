@@ -30,7 +30,7 @@ import { watch } from 'vue'
 import type { DeviceStatus, SensorDataPoint } from '../types'
 import DeviceInfoSection from './DeviceInfoSection.vue'
 import ModuleConfigurationSection from './ModuleConfigurationSection.vue'
-import SensorConfigSection from './SensorConfigSection.vue'
+import SensorConfigSection from '~/features/sensor-configuration/components/SensorConfigSection.vue'
 import { useDatabase } from '~/features/modules/common/composables/useDatabase'
 
 interface Props {

@@ -110,10 +110,11 @@
 import { ref, computed, watch } from 'vue'
 import { useTimeAgo } from '~/composables/useTimeAgo'
 import { useSnackbar } from '~/components/design-system/UISnackbar/useSnackbar'
-import type { SensorDataPoint } from '../../types'
+import type { SensorDataPoint } from '~/features/modules/common/types'
 import UISlider from '~/components/design-system/UISlider/UISlider.vue'
 import UITag from '~/components/design-system/UITag/UITag.vue'
 import UITooltip from '~/components/design-system/UITooltip/UITooltip.vue'
+import { calculateSensorStatus } from '../utils/status-calculator'
 
 // ============================================================================
 // Types
@@ -169,27 +170,30 @@ watch(() => props.hardware.enabled, (newEnabled) => {
 // ============================================================================
 
 const statusClass = computed(() => {
-  switch (props.hardware.status) {
+  // Use computed interval-aware status instead of static backend status
+  const status = computedStatus.value
+  switch (status) {
     case 'ok': return 'bg-green-500'
     case 'missing': return 'bg-red-500'
-    default: return 'bg-red-500'
+    default: return 'bg-gray-400'  // unknown
   }
 })
 
 const statusTextClass = computed(() => {
-  switch (props.hardware.status) {
+  const status = computedStatus.value
+  switch (status) {
     case 'ok': return 'text-gray-700 dark:text-gray-200'
     case 'missing': return 'text-red-600 dark:text-red-400'
-    default: return 'text-red-600 dark:text-red-400'
+    default: return 'text-gray-500 dark:text-gray-400'  // unknown
   }
 })
 
 const statusLabel = computed(() => {
-  switch (props.hardware.status) {
+  const status = computedStatus.value
+  switch (status) {
     case 'ok': return 'OK'
-    case 'partial': return 'Partiel'
-    case 'missing': return 'Déconnecté'
-    default: return 'Inconnu'
+    case 'missing': return 'Données anciennes (> 2× interval)'
+    default: return 'En attente...'
   }
 })
 
@@ -227,6 +231,36 @@ const timeAgo = useTimeAgo(() => {
 })
 
 // ============================================================================
+// Interval-Aware Status Calculation
+// ============================================================================
+
+// Compute real-time status based on last update and interval
+const computedStatus = computed(() => {
+  // Get last update time from sensor history
+  const m = props.hardware.measurements[0]
+  if (!m) return 'unknown'
+  
+  const measureKey = m.key
+  
+  // 1. Try composite key
+  const compositeKey = `${props.hardware.hardwareKey}:${measureKey}`
+  let history = props.sensorHistoryMap?.[compositeKey]
+  
+  // 2. Fallback to simple key
+  if ((!history || history.length === 0) && !measureKey.includes(':')) {
+    history = props.sensorHistoryMap?.[measureKey]
+  }
+  
+  if (!history || history.length === 0) return 'unknown'
+  
+  // Get last update time
+  const lastUpdate = history[history.length - 1].time
+  
+  // Calculate interval-aware status
+  return calculateSensorStatus(lastUpdate, props.hardware.interval)
+})
+
+// ============================================================================
 // Sync & Save Interval
 // ============================================================================
 
@@ -259,19 +293,18 @@ const saveInterval = async () => {
     saving.value = true
     
     try {
-      await $fetch(`/api/modules/${props.moduleId}/config`, {
-        method: 'POST',
-        body: { 
-           sensors: {
-             [props.hardware.hardwareKey]: {
-               interval: localInterval.value
-             }
-           }
-        }
-      })
-      showSnackbar('Intervalle sauvegardé', 'success')
+      const { updateSensorInterval } = await import('~/features/sensor-configuration/services/sensor-config.service')
+      const success = await updateSensorInterval(
+        props.moduleId,
+        props.hardware.hardwareKey,
+        localInterval.value
+      )
       
-      // Update store/cache if needed? The parent usually re-fetches or we assume success.
+      if (success) {
+        showSnackbar('Intervalle sauvegardé', 'success')
+      } else {
+        showSnackbar('Erreur lors de la sauvegarde', 'error')
+      }
     } catch (e) {
       console.error(e)
       showSnackbar('Erreur lors de la sauvegarde', 'error')

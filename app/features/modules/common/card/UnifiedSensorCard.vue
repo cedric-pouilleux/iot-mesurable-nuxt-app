@@ -127,7 +127,7 @@ import { ref, computed, watch } from 'vue'
 import type { SensorDataPoint } from '../types'
 import { formatValue } from '~/utils/format'
 import { useThresholds, useCardColors, useCountUp } from './composables'
-import { useChartSettings } from '~/features/modules/common/sensors-module-options/composables'
+import { useChartSettings } from '~/features/modules/common/module-panel/composables'
 
 // Sub-components
 import SensorCardValue from './SensorCardValue.vue'

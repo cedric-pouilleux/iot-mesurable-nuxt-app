@@ -179,7 +179,7 @@ const emit = defineEmits<{
 
 // Import useDashboard for loading data with specific bucket
 import { useThresholds } from '~/features/modules/common/card/composables'
-import { useChartSettings } from '~/features/modules/common/sensors-module-options/composables'
+import { useChartSettings } from '~/features/modules/common/module-panel/composables'
 
 // Import useDashboard for loading data with specific bucket
 import { useDashboard } from '~/composables/useDashboard'

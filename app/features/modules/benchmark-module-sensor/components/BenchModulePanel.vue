@@ -90,7 +90,7 @@
 import { computed, ref } from 'vue'
 import type { DeviceStatus, SensorData, SensorDataPoint } from '../../common/types'
 import BenchModuleHeader from './BenchModuleHeader.vue'
-import SensorsModuleOptions from '~/features/modules/common/sensors-module-options/SensorsModuleOptions.vue'
+import SensorsModuleOptions from '~/features/modules/common/module-panel/SensorsModuleOptions.vue'
 import SensorDetailGraph from '../../common/card/SensorDetailGraph.vue' 
 import UnifiedSensorCard from '../../common/card/UnifiedSensorCard.vue'
 import { formatUptime } from '~/utils/time'
@@ -124,7 +124,7 @@ const selectedGraphSensor = ref<string | null>(null)
 const selectedGraphActiveSensor = ref<string | null>(null) // Active sensor from card to pre-select
 const isToggling = ref(false)
 
-import { useChartSettings } from '~/features/modules/common/sensors-module-options/composables'
+import { useChartSettings } from '~/features/modules/common/module-panel/composables'
 const { debouncedGraphDuration: graphDuration } = useChartSettings()
 
 // Track active sensor per group type (updated by UnifiedSensorCard)

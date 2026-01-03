@@ -73,7 +73,7 @@ import { useModules, useModulesData } from '~/features/modules/common/composable
 import { useDashboard } from '~/composables/useDashboard'
 import { useMqtt } from '~/features/mqtt/composables/useMqtt'
 import { useZones } from '~/features/zones/composables/useZones'
-import { useChartSettings } from '~/features/modules/common/sensors-module-options/composables'
+import { useChartSettings } from '~/features/modules/common/module-panel/composables'
 
 interface ModuleGroup {
   zoneId: string | null

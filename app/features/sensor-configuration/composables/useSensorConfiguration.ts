@@ -1,5 +1,6 @@
 
-import { ref } from 'vue'
+
+import { ref, type Ref } from 'vue'
 import { useModuleStorage } from './useModuleStorage'
 import { HARDWARE_SENSORS } from '../config/hardwareSensors'
 
