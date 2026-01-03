@@ -48,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, toRef, onMounted, watch, ref } from 'vue'
+import { computed, toRef, onMounted, watch } from 'vue'
 import HardwareSensorRow from './components/HardwareSensorRow.vue'
 import UITag from '~/components/design-system/UITag/UITag.vue'
 import UITooltip from '~/components/design-system/UITooltip/UITooltip.vue'
@@ -56,7 +56,7 @@ import UIPanel from '~/components/design-system/UIPanel/UIPanel.vue'
 import UITagList from '~/components/design-system/UITagList/UITagList.vue'
 import { HARDWARE_SENSORS } from './config/hardwareSensors'
 import type { DeviceStatus, SensorDataPoint } from '../types'
-
+ 
 interface Measurement {
   key: string
   label: string
@@ -83,8 +83,6 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-
-const { t } = useI18n()
 
 // Storage Logic (legacy kept for projections)
 const moduleIdRef = toRef(props, 'moduleId')
@@ -150,6 +148,9 @@ const hardwareSensorList = computed<HardwareData[]>(() => {
   
   return availableHardware
     .map(hw => {
+      // Check if we have received any sensor data yet
+      const hasSensors = props.deviceStatus?.sensors && Object.keys(props.deviceStatus.sensors).length > 0
+      
       // Check if any measurement from this hardware exists in history
       const measurements: Measurement[] = hw.measurements
         .map(measureKey => {
@@ -170,8 +171,6 @@ const hardwareSensorList = computed<HardwareData[]>(() => {
           // User Requirement: Data presence in history does NOT imply hardware status is OK.
           // If no sensor data received yet (empty sensors object), show loader
           let status: 'ok' | 'missing' | 'unknown' | 'disabled' = 'unknown'
-          
-          const hasSensors = props.deviceStatus?.sensors && Object.keys(props.deviceStatus.sensors).length > 0
           
           if (hasSensors) {
             const deviceSensor = props.deviceStatus?.sensors?.[compositeKey] || 
@@ -198,13 +197,16 @@ const hardwareSensorList = computed<HardwareData[]>(() => {
       // If all measurements are disabled, hardware is disabled
       const enabled = disabledCount < measurements.length
       
-      let status: 'ok' | 'partial' | 'missing' | 'disabled' = 'missing'
+      let status: 'ok' | 'partial' | 'missing' | 'disabled' | 'unknown' = 'unknown'
       if (disabledCount === measurements.length) {
         status = 'disabled'
       } else if (okCount === measurements.length) {
         status = 'ok'
       } else if (okCount > 0) {
         status = 'partial'
+      } else if (hasSensors) {
+        // Only mark as missing if we have received sensor data but this hardware is absent
+        status = 'missing'
       }
       
       // Get interval from sensorsConfig (prefer composite key, fallback to simple)

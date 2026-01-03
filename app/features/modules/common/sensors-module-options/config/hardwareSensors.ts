@@ -62,4 +62,22 @@ export const HARDWARE_SENSORS: HardwareSensorDefinition[] = [
     measurements: ['pm1', 'pm25', 'pm4', 'pm10'],
     measurementLabels: { pm1: 'PM1', pm25: 'PM2.5', pm4: 'PM4', pm10: 'PM10' }
   },
+  {
+    hardwareKey: 'sht41',
+    name: 'SHT41',
+    measurements: ['temperature', 'humidity'],
+    measurementLabels: { temperature: 'Temp', humidity: 'Hum' }
+  },
+  {
+    hardwareKey: 'mhz19e',
+    name: 'MH-Z19E',
+    measurements: ['co2'],
+    measurementLabels: { co2: 'CO2' }
+  },
+  {
+    hardwareKey: 'scd41',
+    name: 'SCD41',
+    measurements: ['co2', 'temperature', 'humidity'],
+    measurementLabels: { co2: 'CO2', temperature: 'Temp', humidity: 'Hum' }
+  },
 ]

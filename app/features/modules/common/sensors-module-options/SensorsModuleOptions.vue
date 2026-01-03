@@ -1,14 +1,8 @@
 <template>
-  <!-- 
-    SensorsModuleOptions.vue
-    ========================
-    Collapsible options panel for sensor-based modules.
-    Reusable across all modules that have sensors.
-  -->
   <div 
     class="options-wrapper"
     :class="{ 'is-open': isOpen }"
-  >
+  > 
     <div class="options-content">
       <div class="grid grid-cols-6 gap-4 mb-5 items-stretch">
         <DeviceInfoSection
@@ -50,13 +44,12 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   'toggle-zone': [zoneId: string]
-  'open-zone-drawer': []
+  'open-zone-drawer': [] 
   'zone-changed': []
 }>()
 
 const { dbSize, loadDbSize } = useDatabase()
 
-// Load DB size when opened
 watch(() => props.isOpen, (isOpen) => {
   if (isOpen) {
     loadDbSize()
@@ -65,12 +58,11 @@ watch(() => props.isOpen, (isOpen) => {
 </script>
 
 <style scoped>
-/* CSS Grid animation for smooth height transition */
 .options-wrapper {
   display: grid;
   grid-template-rows: 0fr;
   transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden; /* Prevent content from being interactive when closed */
+  overflow: hidden; 
 }
 
 .options-wrapper.is-open {
@@ -81,7 +73,6 @@ watch(() => props.isOpen, (isOpen) => {
   min-height: 0;
   opacity: 0;
   visibility: hidden;
-  /* Close: fade out opacity, then hide visibility */
   transition: opacity 0.1s ease-out, visibility 0s 0.1s;
 }
 
@@ -89,7 +80,6 @@ watch(() => props.isOpen, (isOpen) => {
   opacity: 1;
   visibility: visible;
   padding-bottom: 1.25rem;
-  /* Open: show visibility immediately, then fade in opacity */
   transition: opacity 0.3s ease-out 0.15s, visibility 0s 0s;
 }
 </style>
