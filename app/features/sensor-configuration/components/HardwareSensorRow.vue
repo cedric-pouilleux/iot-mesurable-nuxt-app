@@ -4,27 +4,15 @@
     =====================
     Compact row for hardware sensor with measurements, interval control, and reset button.
     All elements on a single line for maximum density.
+    
+    REFACTORED: Extracted logic into composables and sub-components for better maintainability.
   -->
   <div class="flex items-center gap-2">
     
     <!-- Status Indicator -->
-    <!-- When disabled: red square. When enabled: normal status dot -->
-    <div 
-      v-if="!isEnabled"
-      class="w-2 h-2 rounded-sm bg-red-500 flex-shrink-0"
-      title="Arrêté"
-    />
-    <div 
-      v-else-if="hardware.status !== 'unknown'"
-      class="w-2 h-2 rounded-full flex-shrink-0"
-      :class="statusClass"
-      :title="statusLabel"
-    />
-    <Icon 
-      v-else
-      name="tabler:loader" 
-      class="w-3 h-3 text-gray-400 animate-spin flex-shrink-0" 
-      title="En attente..."
+    <SensorStatusIndicator 
+      :status="computedStatus"
+      :isEnabled="isEnabled"
     />
     
     <!-- Hardware Name -->
@@ -36,56 +24,30 @@
     </span>
     
     <!-- Measurement badges (only when enabled) -->
-    <div v-if="isEnabled" class="flex items-center gap-1 flex-shrink-0">
-      <UITag 
-        v-for="m in hardware.measurements" 
-        :key="m.key"
-        :variant="getVariant(m.status)"
-        size="xs"
-        :light="true"
-      >
-        {{ m.label }}
-      </UITag>
-    </div>
+    <SensorMeasurementBadges 
+      :measurements="hardware.measurements"
+      :isEnabled="isEnabled"
+    />
     
     <!-- Spacer -->
     <div class="flex-1"></div>
     
     <!-- Time Counter (only when enabled) -->
-    <span v-if="isEnabled" class="text-[10px] text-gray-400 dark:text-gray-300 flex-shrink-0">
+    <span 
+      v-if="isEnabled"
+      class="text-[10px] text-gray-400 dark:text-gray-300 flex-shrink-0"
+    >
       {{ timeAgo || '--' }}
     </span>
     
-    <!-- Stop/Play Button -->
-    <UITooltip :text="isEnabled ? 'Arrêter le capteur' : 'Démarrer le capteur'">
-      <button
-        @click="toggleEnabled"
-        :disabled="toggling"
-        class="p-1 rounded transition-colors flex-shrink-0"
-        :class="[
-          isEnabled 
-            ? 'hover:bg-orange-50 dark:hover:bg-orange-900/30 text-gray-400 dark:text-gray-500 hover:text-orange-500 dark:hover:text-orange-400' 
-            : 'hover:bg-green-50 dark:hover:bg-green-900/30 text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300',
-          { 'opacity-50': toggling }
-        ]"
-      >
-        <Icon :name="toggling ? 'tabler:loader' : (isEnabled ? 'tabler:player-stop' : 'tabler:player-play')" 
-              class="w-3.5 h-3.5" 
-              :class="{ 'animate-spin': toggling }" />
-      </button>
-    </UITooltip>
-    
-    <!-- Reset Button (only when enabled) -->
-    <UITooltip v-if="isEnabled" text="Redémarrer le capteur">
-      <button
-        @click="resetSensor"
-        :disabled="resetting"
-        class="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/30 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors flex-shrink-0"
-        :class="{ 'animate-spin': resetting }"
-      >
-        <Icon :name="resetting ? 'tabler:loader' : 'tabler:refresh'" class="w-3.5 h-3.5" />
-      </button>
-    </UITooltip>
+    <!-- Action Buttons (stop/play/reset) -->
+    <SensorActionButtons
+      :isEnabled="isEnabled"
+      :toggling="toggling"
+      :resetting="resetting"
+      @toggle="handleToggle"
+      @reset="handleReset"
+    />
     
     <!-- Interval Control (disabled when stopped) -->
     <UITooltip text="Intervalle de lecture (sec)">
@@ -96,7 +58,7 @@
         :step="10"
         suffix="s"
         :disabled="!isEnabled || hardware.status === 'missing'"
-        @change="saveInterval"
+        @change="handleIntervalChange"
       />
     </UITooltip>
   </div>
@@ -105,16 +67,25 @@
 <script setup lang="ts">
 /**
  * HardwareSensorRow - Compact single-line row for hardware sensor
- * Includes reset button for hard reset of stuck sensors
+ * 
+ * REFACTORED to use:
+ * - useHardwareSensorHistory: for data resolution
+ * - useHardwareSensorActions: for API actions
+ * - status-helpers: for display logic
+ * - Sub-components: for UI elements
  */
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, toRef } from 'vue'
 import { useTimeAgo } from '~/composables/useTimeAgo'
-import { useSnackbar } from '~/components/design-system/UISnackbar/useSnackbar'
 import type { SensorDataPoint } from '~/features/modules/common/types'
 import UISlider from '~/components/design-system/UISlider/UISlider.vue'
-import UITag from '~/components/design-system/UITag/UITag.vue'
 import UITooltip from '~/components/design-system/UITooltip/UITooltip.vue'
 import { calculateSensorStatus } from '../utils/status-calculator'
+import { getStatusTextClass } from '../utils/status-helpers'
+import { useHardwareSensorHistory } from '../composables/useHardwareSensorHistory'
+import { useHardwareSensorActions } from '../composables/useHardwareSensorActions'
+import SensorStatusIndicator from './SensorStatusIndicator.vue'
+import SensorMeasurementBadges from './SensorMeasurementBadges.vue'
+import SensorActionButtons from './SensorActionButtons.vue'
 
 // ============================================================================
 // Types
@@ -150,13 +121,13 @@ const props = withDefaults(defineProps<Props>(), {
   sensorHistoryMap: () => ({})
 })
 
+const emit = defineEmits<{
+  'interval-change': [hardwareKey: string, interval: number]
+  'enabled-change': [hardwareKey: string, enabled: boolean]
+}>()
+
 const localInterval = ref(props.hardware.interval)
-const saving = ref(false)
-const resetting = ref(false)
-const toggling = ref(false)
-// Initialize from ESP32-provided enabled state, with localStorage fallback for optimistic updates
 const isEnabled = ref(props.hardware.enabled)
-const { showSnackbar } = useSnackbar()
 
 // Sync isEnabled when props change (e.g., after ESP32 status update)
 watch(() => props.hardware.enabled, (newEnabled) => {
@@ -165,115 +136,66 @@ watch(() => props.hardware.enabled, (newEnabled) => {
   }
 })
 
+watch(() => props.hardware.interval, (newVal) => {
+  localInterval.value = newVal
+})
+
 // ============================================================================
-// Status Display
+// History Resolution (using composable)
 // ============================================================================
 
-const statusClass = computed(() => {
-  // Use computed interval-aware status instead of static backend status
-  const status = computedStatus.value
-  switch (status) {
-    case 'ok': return 'bg-green-500'
-    case 'missing': return 'bg-red-500'
-    default: return 'bg-gray-400'  // unknown
-  }
+const firstMeasurement = computed(() => props.hardware.measurements[0])
+const measureKey = computed(() => firstMeasurement.value?.key || '')
+
+const { lastUpdate } = useHardwareSensorHistory(
+  toRef(props.hardware, 'hardwareKey'),
+  measureKey,
+  toRef(props, 'sensorHistoryMap')
+)
+
+// ============================================================================
+// Status Calculation
+// ============================================================================
+
+const computedStatus = computed(() => {
+  if (!firstMeasurement.value) return 'unknown'
+  if (!lastUpdate.value) return 'unknown'
+  return calculateSensorStatus(lastUpdate.value, props.hardware.interval)
 })
 
-const statusTextClass = computed(() => {
-  const status = computedStatus.value
-  switch (status) {
-    case 'ok': return 'text-gray-700 dark:text-gray-200'
-    case 'missing': return 'text-red-600 dark:text-red-400'
-    default: return 'text-gray-500 dark:text-gray-400'  // unknown
-  }
-})
-
-const statusLabel = computed(() => {
-  const status = computedStatus.value
-  switch (status) {
-    case 'ok': return 'OK'
-    case 'missing': return 'Données anciennes (> 2× interval)'
-    default: return 'En attente...'
-  }
-})
-
-const getVariant = (status: string) => {
-  switch (status) {
-    case 'ok': return 'success'
-    case 'missing': return 'error'
-    default: return 'error'
-  }
-}
+const statusTextClass = computed(() => getStatusTextClass(computedStatus.value))
 
 // ============================================================================
 // Time Ago
 // ============================================================================
 
-const timeAgo = useTimeAgo(() => {
-  const m = props.hardware.measurements[0]
-  if (!m) return null
+const timeAgo = useTimeAgo(() => lastUpdate.value)
+
+// ============================================================================
+// Actions (using composable)
+// ============================================================================
+
+const { resetting, toggling, saving, resetSensor, toggleEnabled, updateInterval } = 
+  useHardwareSensorActions(toRef(props, 'moduleId'))
+
+const handleToggle = async () => {
+  const previousState = isEnabled.value
+  const newState = await toggleEnabled(props.hardware.hardwareKey, isEnabled.value)
   
-  const measureKey = m.key
-  
-  // 1. Try composite key
-  const compositeKey = `${props.hardware.hardwareKey}:${measureKey}`
-  let history = props.sensorHistoryMap?.[compositeKey]
-  
-  // 2. Fallback to simple key
-  if ((!history || history.length === 0) && !measureKey.includes(':')) {
-    history = props.sensorHistoryMap?.[measureKey]
+  if (newState !== previousState) {
+    isEnabled.value = newState
+    emit('enabled-change', props.hardware.hardwareKey, newState)
   }
-  
-  if (!history || history.length === 0) return null
-  
-  // History is sorted ASC (oldest first)
-  return history[history.length - 1].time
-})
+}
+
+const handleReset = async () => {
+  await resetSensor(props.hardware.hardwareKey, props.hardware.name)
+}
 
 // ============================================================================
-// Interval-Aware Status Calculation
+// Interval Change with Debounce
 // ============================================================================
 
-// Compute real-time status based on last update and interval
-const computedStatus = computed(() => {
-  // Get last update time from sensor history
-  const m = props.hardware.measurements[0]
-  if (!m) return 'unknown'
-  
-  const measureKey = m.key
-  
-  // 1. Try composite key
-  const compositeKey = `${props.hardware.hardwareKey}:${measureKey}`
-  let history = props.sensorHistoryMap?.[compositeKey]
-  
-  // 2. Fallback to simple key
-  if ((!history || history.length === 0) && !measureKey.includes(':')) {
-    history = props.sensorHistoryMap?.[measureKey]
-  }
-  
-  if (!history || history.length === 0) return 'unknown'
-  
-  // Get last update time
-  const lastUpdate = history[history.length - 1].time
-  
-  // Calculate interval-aware status
-  return calculateSensorStatus(lastUpdate, props.hardware.interval)
-})
-
-// ============================================================================
-// Sync & Save Interval
-// ============================================================================
-
-const emit = defineEmits<{
-  'interval-change': [hardwareKey: string, interval: number]
-  'enabled-change': [hardwareKey: string, enabled: boolean]
-}>()
-
-watch(() => props.hardware.interval, (newVal) => {
-  localInterval.value = newVal
-})
-
-// Emit event with debounce when localInterval change (slider drag/release)
 let intervalDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
 watch(localInterval, (newVal) => {
@@ -283,113 +205,13 @@ watch(localInterval, (newVal) => {
   }, 100)
 })
 
-let debounceTimer: ReturnType<typeof setTimeout> | null = null
+let saveDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
-const saveInterval = async () => {
-  if (debounceTimer) clearTimeout(debounceTimer)
+const handleIntervalChange = async () => {
+  if (saveDebounceTimer) clearTimeout(saveDebounceTimer)
   
-  debounceTimer = setTimeout(async () => {
-    if (saving.value) return
-    saving.value = true
-    
-    try {
-      const { updateSensorInterval } = await import('~/features/sensor-configuration/services/sensor-config.service')
-      const success = await updateSensorInterval(
-        props.moduleId,
-        props.hardware.hardwareKey,
-        localInterval.value
-      )
-      
-      if (success) {
-        showSnackbar('Intervalle sauvegardé', 'success')
-      } else {
-        showSnackbar('Erreur lors de la sauvegarde', 'error')
-      }
-    } catch (e) {
-      console.error(e)
-      showSnackbar('Erreur lors de la sauvegarde', 'error')
-    } finally {
-      saving.value = false
-    }
+  saveDebounceTimer = setTimeout(async () => {
+    await updateInterval(props.hardware.hardwareKey, localInterval.value)
   }, 500)
 }
-
-// ============================================================================
-// Reset Sensor
-// ============================================================================
-
-const resetSensor = async () => {
-  if (resetting.value) return
-  resetting.value = true
-  
-  // Use hardware identifier to reset the whole module
-  const sensorKey = props.hardware.hardwareKey
-  if (!sensorKey) {
-    showSnackbar('Aucun capteur à reset', 'error')
-    resetting.value = false
-    return
-  }
-  
-  showSnackbar(`Reset ${props.hardware.name}...`, 'info')
-  
-  try {
-    const response = await $fetch<{ success: boolean; message: string }>(
-      `/api/modules/${encodeURIComponent(props.moduleId)}/reset-sensor`,
-      {
-        method: 'POST',
-        body: { sensor: sensorKey }
-      }
-    )
-    
-    if (response.success) {
-      showSnackbar(`✓ ${props.hardware.name} reset envoyé`, 'success')
-    } else {
-      showSnackbar(`Erreur reset: ${response.message}`, 'error')
-    }
-  } catch (err) {
-    console.error('Failed to reset sensor:', err)
-    showSnackbar(`Erreur reset ${props.hardware.name}`, 'error')
-  } finally {
-    resetting.value = false
-  }
-}
-
-// ============================================================================
-// Toggle Enable/Disable
-// ============================================================================
-
-const toggleEnabled = async () => {
-  // Optimistic UI: Update local state immediately
-  const previousState = isEnabled.value
-  const newState = !isEnabled.value
-  isEnabled.value = newState
-  
-  // No loading state for instant feedback
-  
-  try {
-     const endpoint = `/api/modules/${props.moduleId}/hardware/enable`
-       
-     await $fetch(endpoint, { 
-       method: 'POST',
-       body: {
-         hardware: props.hardware.hardwareKey,
-         enabled: newState
-       }
-     })
-     
-     // Success notification
-     showSnackbar(newState ? 'Capteur activé' : 'Capteur désactivé', 'success')
-     emit('enabled-change', props.hardware.hardwareKey, newState)
-     
-     // Note: Parent component (SensorConfigSection) polls or listens to events to update global state.
-     // Since we updated local isEnabled, the UI is correct immediately.
-  } catch (e) {
-    console.error(e)
-    // Revert styling on error
-    isEnabled.value = previousState
-    showSnackbar('Erreur lors du changement de statut', 'error')
-  }
-}
 </script>
-
-

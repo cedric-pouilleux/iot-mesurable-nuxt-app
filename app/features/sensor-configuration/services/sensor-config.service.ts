@@ -46,11 +46,11 @@ export async function toggleSensorEnabled(
     enabled: boolean
 ): Promise<boolean> {
     try {
-        const response = await fetch(`/api/modules/${moduleId}/sensors/config`, {
-            method: 'PUT',
+        const response = await fetch(`/api/modules/${moduleId}/hardware/enable`, {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                sensorType,
+                hardware: sensorType,
                 enabled,
             }),
         })
@@ -63,6 +63,32 @@ export async function toggleSensorEnabled(
         return true
     } catch (error) {
         console.error('Failed to toggle sensor:', error)
+        return false
+    }
+}
+
+/**
+ * Reset (reboot) a hardware sensor
+ */
+export async function resetSensor(
+    moduleId: string,
+    sensorKey: string
+): Promise<boolean> {
+    try {
+        const response = await fetch(`/api/modules/${encodeURIComponent(moduleId)}/reset-sensor`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sensor: sensorKey }),
+        })
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`)
+        }
+
+        const data = await response.json()
+        return data.success === true
+    } catch (error) {
+        console.error('Failed to reset sensor:', error)
         return false
     }
 }
