@@ -39,8 +39,7 @@
           <span class="text-3xl font-bold tracking-tight" :class="isPanelOpen ? 'text-white' : valueColorClass">
             {{ displayValue }}
           </span>
-          <span v-if="connectionStatus === 'connected'" class="text-base font-medium ml-1" :class="isPanelOpen ? 'text-white/70' : lightValueColorClass">{{ unit }}</span>
-          <span v-else class="text-sm font-medium ml-1 opacity-60" :class="isPanelOpen ? 'text-white/50' : 'text-gray-500 dark:text-gray-400'">{{ timeSinceLastMeasurement }}</span>
+          <span class="text-base font-medium ml-1" :class="isPanelOpen ? 'text-white/70' : lightValueColorClass">{{ unit }}</span>
         </div>
         
         <!-- Threshold Alert -->
@@ -85,13 +84,12 @@
           <!-- Value Display -->
           <SensorCardValue
             :value="displayRawValue"
-            :unit="connectionStatus === 'connected' ? unit : ''"
+            :unit="unit"
             :trend="trend"
             :sensorKey="activeSensorKey"
             :color="color"
             :isPanelOpen="isPanelOpen"
             :showTrend="shouldShowTrend"
-            :timeSince="connectionStatus !== 'connected' ? timeSinceLastMeasurement : null"
             class="cursor-pointer hover:opacity-80 transition-opacity"
             @click="$emit('toggle-graph')"
           />

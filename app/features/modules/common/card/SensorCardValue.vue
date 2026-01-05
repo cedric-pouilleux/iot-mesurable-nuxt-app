@@ -21,13 +21,12 @@
       <!-- Empty space if no trend to maintain alignment -->
       <div v-else class="w-2.5 h-2.5 -mb-0.5"></div>
       
-      <!-- Unit or Time Since -->
+      <!-- Unit -->
       <span 
-        v-if="unit || timeSince"
         class="text-sm font-medium" 
-        :class="timeSince ? (isPanelOpen ? 'text-white/50' : 'text-gray-500 dark:text-gray-400') : (isPanelOpen ? 'text-white/70' : 'text-gray-400 dark:text-gray-400')"
+        :class="isPanelOpen ? 'text-white/70' : 'text-gray-400 dark:text-gray-400'"
       >
-        {{ timeSince || unit }}
+        {{ unit }}
       </span>
     </div>
   </div>
@@ -46,7 +45,6 @@ interface Props {
   color: string
   isPanelOpen?: boolean
   showTrend?: boolean
-  timeSince?: string | null
 }
 
 const props = withDefaults(defineProps<Props>(), {

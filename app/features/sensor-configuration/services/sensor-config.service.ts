@@ -14,15 +14,19 @@ export async function updateSensorInterval(
     intervalSeconds: number
 ): Promise<boolean> {
     try {
-        const update: SensorConfigUpdate = {
-            sensorType,
-            intervalSeconds,
+        // Backend expects: { sensors: { [hardware_key]: { interval: number } } }
+        const payload = {
+            sensors: {
+                [sensorType]: {
+                    interval: intervalSeconds
+                }
+            }
         }
 
         const response = await fetch(`/api/modules/${moduleId}/config`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(update),
+            body: JSON.stringify(payload),
         })
 
         if (!response.ok) {

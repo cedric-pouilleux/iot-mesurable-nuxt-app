@@ -80,4 +80,10 @@ export const HARDWARE_SENSORS: HardwareSensorDefinition[] = [
     measurements: ['co2', 'temperature', 'humidity'],
     measurementLabels: { co2: 'CO2', temperature: 'Temp', humidity: 'Hum' }
   },
+  {
+    hardwareKey: 'tpm200a',
+    name: 'TPM200A-CO',
+    measurements: ['co'],
+    measurementLabels: { co: 'CO' }
+  },
 ]
