@@ -19,8 +19,8 @@ export async function updateSensorInterval(
             intervalSeconds,
         }
 
-        const response = await fetch(`/api/modules/${moduleId}/sensors/config`, {
-            method: 'PUT',
+        const response = await fetch(`/api/modules/${moduleId}/config`, {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(update),
         })

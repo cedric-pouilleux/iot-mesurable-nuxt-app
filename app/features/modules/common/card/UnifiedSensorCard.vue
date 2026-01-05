@@ -24,9 +24,9 @@
         <!-- Title + Trend Row -->
         <div class="flex items-center gap-1.5">
           <span class="text-sm font-medium" :class="isPanelOpen ? 'text-white' : darkerValueColorClass">{{ currentTitle }}</span>
-          <!-- Trend Arrow (next to title) -->
+          <!-- Trend Arrow (only if connected) -->
           <Icon
-            v-if="activeSensor?.status !== 'missing' && trend !== 'stable'"
+            v-if="shouldShowTrend"
             :name="trend === 'up' ? 'tabler:triangle-filled' : 'tabler:triangle-inverted-filled'"
             class="w-2 h-2"
             :class="trendColorClass"
@@ -37,9 +37,10 @@
         <!-- Value + Unit -->
         <div class="flex items-baseline">
           <span class="text-3xl font-bold tracking-tight" :class="isPanelOpen ? 'text-white' : valueColorClass">
-            {{ formattedValue }}
+            {{ displayValue }}
           </span>
-          <span class="text-base font-medium ml-1" :class="isPanelOpen ? 'text-white/70' : lightValueColorClass">{{ unit }}</span>
+          <span v-if="connectionStatus === 'connected'" class="text-base font-medium ml-1" :class="isPanelOpen ? 'text-white/70' : lightValueColorClass">{{ unit }}</span>
+          <span v-else class="text-sm font-medium ml-1 opacity-60" :class="isPanelOpen ? 'text-white/50' : 'text-gray-500 dark:text-gray-400'">{{ timeSinceLastMeasurement }}</span>
         </div>
         
         <!-- Threshold Alert -->
@@ -83,13 +84,14 @@
 
           <!-- Value Display -->
           <SensorCardValue
-            :value="rawValue"
-            :unit="unit"
+            :value="displayRawValue"
+            :unit="connectionStatus === 'connected' ? unit : ''"
             :trend="trend"
             :sensorKey="activeSensorKey"
             :color="color"
             :isPanelOpen="isPanelOpen"
-            :showTrend="activeSensor?.status !== 'missing'"
+            :showTrend="shouldShowTrend"
+            :timeSince="connectionStatus !== 'connected' ? timeSinceLastMeasurement : null"
             class="cursor-pointer hover:opacity-80 transition-opacity"
             @click="$emit('toggle-graph')"
           />
@@ -135,6 +137,9 @@ import SensorCardThreshold from './SensorCardThreshold.vue'
 import SensorDropdown from './SensorDropdown.vue'
 import SensorMiniChart from './SensorMiniChart.vue'
 import UITooltip from '~/components/design-system/UITooltip/UITooltip.vue'
+
+// Health monitoring
+import { useDeviceHealth } from '~/features/modules/common/composables/useDeviceHealth'
 
 // ============================================================================
 // Types
@@ -213,11 +218,28 @@ if (!enabledSensors.value.find(s => s.key === activeSensorKey.value)) {
 }
 
 // ============================================================================
+// Health Monitoring
+// ============================================================================
+
+const { getConnectionStatus, getTimeSinceLastMeasurement } = useDeviceHealth(computed(() => props.moduleId))
+
+const connectionStatus = computed(() => {
+  if (!activeSensorKey.value) return 'unknown'
+  return getConnectionStatus(activeSensorKey.value)
+})
+
+const timeSinceLastMeasurement = computed(() => {
+  if (!activeSensorKey.value) return null
+  return getTimeSinceLastMeasurement(activeSensorKey.value)
+})
+
+// ============================================================================
 // Persist Sensor Selection
 // ============================================================================
 
-watch(activeSensorKey, async (newVal) => {
-  if (process.client && newVal) {
+watch(activeSensorKey, async (newVal, oldVal) => {
+  // Only save if the value actually changed (not just initialized)
+  if (process.client && newVal && newVal !== oldVal) {
     emit('update:active-sensor', newVal)
     
     try {
@@ -230,7 +252,7 @@ watch(activeSensorKey, async (newVal) => {
       console.error('Failed to save preference', e)
     }
   }
-}, { immediate: true })
+})
 
 // ============================================================================
 // Computed: Active Sensor
@@ -304,13 +326,36 @@ const rawValue = computed(() => {
   return sensor.value
 })
 
-const animatedValue = useCountUp(rawValue, { duration: 400, threshold: 0.05 })
+// Only show trend if sensor is actually connected (not stale or offline)
+const shouldShowTrend = computed(() => {
+  if (connectionStatus.value !== 'connected') return false
+  if (activeSensor.value?.status === 'missing') return false
+  if (trend.value === 'stable') return false
+  return true
+})
+
+// Display value: show '--' if not connected, otherwise show the value
+const displayRawValue = computed(() => {
+  if (connectionStatus.value !== 'connected') return undefined
+  return rawValue.value
+})
+
+const animatedValue = useCountUp(displayRawValue, { duration: 400, threshold: 0.05 })
 
 const formattedValue = computed(() => {
   if (animatedValue.value === undefined || animatedValue.value === null) {
     return '--'
   }
   return formatValue(animatedValue.value)
+})
+
+// Display value for minimalist mode (with time since last measurement if not connected)
+const displayValue = computed(() => {
+  if (connectionStatus.value === 'connected') {
+    return formattedValue.value
+  }
+  // Show '--' for offline/stale sensors
+  return '--'
 })
 
 // ============================================================================
@@ -388,26 +433,50 @@ const thresholdAlert = computed(() => {
 // Status Display
 // ============================================================================
 
-const getSensorStatus = (sensor: SensorItem) => {
-  if (sensor.status === 'ok') return { icon: 'tabler:circle-check-filled', color: 'text-green-500', text: 'OK' }
-  if (sensor.status === 'missing') return { icon: 'tabler:circle-x-filled', color: 'text-red-500', text: 'Déconnecté' }
-  if (sensor.value === undefined || sensor.value === null) return { icon: 'tabler:circle-x-filled', color: 'text-red-500', text: 'Déconnecté' }
-  return { icon: 'tabler:circle-check-filled', color: 'text-green-500', text: 'OK' }
-}
-
-const currentStatus = computed(() => getSensorStatus(activeSensor.value))
-const statusIcon = computed(() => currentStatus.value.icon)
-const statusColor = computed(() => {
-  if (currentStatus.value.text === 'OK') {
-    return valueColorClass.value
-  }
-  return currentStatus.value.color
+// Use health status for the status indicator (pastille)
+const statusIcon = computed(() => {
+  const healthStatus = connectionStatus.value
+  if (healthStatus === 'connected') return 'tabler:circle-check-filled'
+  if (healthStatus === 'stale') return 'tabler:alert-circle-filled'
+  if (healthStatus === 'offline') return 'tabler:circle-x-filled'
+  
+  // Fallback to sensor status if health not available
+  const sensor = activeSensor.value
+  if (sensor?.status === 'ok') return 'tabler:circle-check-filled'
+  if (sensor?.status === 'missing') return 'tabler:circle-x-filled'
+  return 'tabler:circle-check-filled'
 })
+
+const statusColor = computed(() => {
+  const healthStatus = connectionStatus.value
+  if (healthStatus === 'connected') return valueColorClass.value
+  if (healthStatus === 'stale') return 'text-amber-500'
+  if (healthStatus === 'offline') return 'text-red-500'
+  
+  // Fallback to sensor status
+  const sensor = activeSensor.value
+  if (sensor?.status === 'ok') return valueColorClass.value
+  if (sensor?.status === 'missing') return 'text-red-500'
+  return valueColorClass.value
+})
+
 const statusTooltip = computed(() => {
   const model = activeSensor.value?.model || activeSensor.value?.label || 'Capteur'
-  const statusText = currentStatus.value.text === 'OK' ? t('common.success') : t('error.generic')
-  // We should probably add specific status translations
-  return `${model}: ${currentStatus.value.text}`
+  const healthStatus = connectionStatus.value
+  const timeSince = timeSinceLastMeasurement.value
+  
+  if (healthStatus === 'connected') {
+    return `${model}: Connecté ${timeSince ? `(il y a ${timeSince})` : ''}`
+  }
+  if (healthStatus === 'stale') {
+    return `${model}: Ralenti ${timeSince ? `(il y a ${timeSince})` : ''}`
+  }
+  if (healthStatus === 'offline') {
+    return `${model}: Hors ligne ${timeSince ? `(dernière mesure il y a ${timeSince})` : ''}`
+  }
+  
+  // Fallback
+  return `${model}: ${activeSensor.value?.status || 'Unknown'}`
 })
 </script>
 
