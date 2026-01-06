@@ -16,7 +16,9 @@ export interface LogFilters {
     levels: string[]
     search: string
     limit: string
+    moduleId: string
 }
+
 
 export interface LogsResponse {
     logs: LogEntry[]

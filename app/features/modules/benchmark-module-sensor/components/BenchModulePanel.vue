@@ -125,7 +125,7 @@ const selectedGraphActiveSensor = ref<string | null>(null) // Active sensor from
 const isToggling = ref(false)
 
 import { useChartSettings } from '~/features/modules/common/module-panel/composables'
-const { debouncedGraphDuration: graphDuration } = useChartSettings()
+const { debouncedGraphDuration: graphDuration } = useChartSettings(computed(() => props.moduleId))
 
 // Track active sensor per group type (updated by UnifiedSensorCard)
 const activeSensorByGroup = reactive<Record<string, string>>({})

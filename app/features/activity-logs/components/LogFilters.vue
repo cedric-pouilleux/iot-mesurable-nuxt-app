@@ -8,6 +8,10 @@
       :model-value="filters.categories"
       @update:model-value="updateFilters({ categories: $event })"
     />
+    <FilterModule
+      :model-value="filters.moduleId"
+      @update:model-value="updateFilters({ moduleId: $event })"
+    />
     <FilterSource
       :model-value="filters.source"
       @update:model-value="updateFilters({ source: $event })"
@@ -41,6 +45,7 @@
 <script setup lang="ts">
 import FilterPeriod from './filters/FilterPeriod.vue'
 import FilterCategory from './filters/FilterCategory.vue'
+import FilterModule from './filters/FilterModule.vue'
 import FilterSource from './filters/FilterSource.vue'
 import FilterDirection from './filters/FilterDirection.vue'
 import FilterLevel from './filters/FilterLevel.vue'

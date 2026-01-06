@@ -4,6 +4,7 @@ export const LOG_CATEGORIES = [
     { value: 'DB', label: 'DB', color: '#06b6d4' },
     { value: 'API', label: 'API', color: '#ec4899' },
     { value: 'WEBSOCKET', label: 'WebSocket', color: '#fb923c' },
+    { value: 'DATA_GAP', label: 'Data Gap', color: '#f59e0b' },
 ]
 
 export const LOG_PERIODS = [
@@ -40,4 +41,6 @@ export const CATEGORY_CLASSES: Record<string, string> = {
     API: 'text-pink-500',
     SYSTEM: 'text-slate-400',
     WEBSOCKET: 'text-orange-400',
+    DATA_GAP: 'text-amber-500',
 }
+

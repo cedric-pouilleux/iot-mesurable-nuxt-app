@@ -59,8 +59,16 @@
                 {{ formatCategory(log.category) }}
               </span>
             </td>
-            <td v-if="showHardwareColumn" class="whitespace-nowrap text-xs text-indigo-600 dark:text-indigo-400 font-medium">
-              {{ log.details?.moduleId || '-' }}
+            <td class="whitespace-nowrap text-xs px-2">
+              <span 
+                v-if="log.details?.moduleId" 
+                class="px-2 py-0.5 text-xs font-medium rounded bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800"
+                :title="`Module: ${log.details.moduleId}`"
+              >
+                <Icon name="tabler:box" class="w-3 h-3 inline mr-1" />
+                {{ log.details.moduleId }}
+              </span>
+              <span v-else class="text-gray-400 dark:text-gray-600">-</span>
             </td>
             <td class="whitespace-nowrap">
               <span
@@ -120,7 +128,6 @@ defineProps<{
   logs: LogEntry[]
   loading: boolean
   error: string | null
-  showHardwareColumn: boolean
 }>()
 
 defineEmits<{
@@ -148,6 +155,8 @@ const formatCategory = (category: string) => {
   if (category === 'API') return 'API'
   if (category === 'SYSTEM') return 'System'
   if (category === 'WEBSOCKET') return 'WebSocket'
+  if (category === 'DATA_GAP') return 'Data Gap'
   return category.charAt(0) + category.slice(1).toLowerCase()
 }
+
 </script>

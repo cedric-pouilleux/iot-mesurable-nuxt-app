@@ -22,6 +22,7 @@ export function useLogs() {
         levels: getQueryArray(route.query.level) as any,
         search: (route.query.search as string) || '',
         limit: (route.query.limit as string) || '100',
+        moduleId: (route.query.moduleId as string) || '',
     })
 
     const timeRange = ref('24h')
@@ -58,6 +59,7 @@ export function useLogs() {
 
             if (filters.value.source) params.append('source', filters.value.source)
             if (filters.value.direction) params.append('direction', filters.value.direction)
+            if (filters.value.moduleId) params.append('moduleId', filters.value.moduleId)
             if (filters.value.search) params.append('search', filters.value.search)
 
             if (timeSelection.value) {
@@ -122,6 +124,7 @@ export function useLogs() {
             filters.value.levels,
             filters.value.source,
             filters.value.direction,
+            filters.value.moduleId,
             filters.value.limit,
         ],
         () => {

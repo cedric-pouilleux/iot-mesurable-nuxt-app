@@ -35,7 +35,6 @@
         :logs="logs"
         :loading="loading"
         :error="error"
-        :show-hardware-column="filters.categories.includes('HARDWARE')"
         @open-details="openDetails"
         @retry="loadLogs"
       />

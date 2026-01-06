@@ -1,10 +1,4 @@
 <template>
-  <!--
-    UnifiedSensorCard.vue
-    =====================
-    Compact sensor card displaying title, value, status, and optional mini chart.
-    Refactored to use sub-components for better maintainability.
-  -->
   <div
     class="relative rounded-lg group/card dark:border-gray-700 flex flex-col justify-between flex-1 min-w-0 transition-all duration-300"
     :class="[
@@ -21,10 +15,8 @@
         class="p-3 flex flex-col justify-start cursor-pointer"
         @click="$emit('toggle-graph')"
       >
-        <!-- Title + Trend Row -->
         <div class="flex items-center gap-1.5">
           <span class="text-sm font-medium" :class="isPanelOpen ? 'text-white' : darkerValueColorClass">{{ currentTitle }}</span>
-          <!-- Trend Arrow (only if connected) -->
           <Icon
             v-if="shouldShowTrend"
             :name="trend === 'up' ? 'tabler:triangle-filled' : 'tabler:triangle-inverted-filled'"
