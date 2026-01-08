@@ -207,17 +207,26 @@ const effectiveHistory = computed<SensorDataPoint[]>(() => {
     // Try to find a key that matches the selected sensor
     const selectedKey = props.selectedSensor || props.initialActiveSensor
     if (selectedKey) {
-      // Direct match
+      // 1. Direct match with full key (e.g. "tpm200a:co")
       if (localHistoryMap.value[selectedKey]) {
         return localHistoryMap.value[selectedKey]
       }
-      // Try to find by sensor type
+      
       const sensorType = selectedKey.includes(':') ? selectedKey.split(':')[1] : selectedKey
-      const matchingKey = Object.keys(localHistoryMap.value).find(k => 
-        k.toLowerCase().includes(sensorType.toLowerCase())
+      
+      // 2. Direct match with sensor type (e.g. "co")
+      if (localHistoryMap.value[sensorType]) {
+        return localHistoryMap.value[sensorType]
+      }
+      
+      // 3. Key ends with :sensorType (e.g. key is "tpm200a:co" and sensorType is "co")
+      // This is safer than .includes() which would match "co" in "co2"
+      const suffixMatch = Object.keys(localHistoryMap.value).find(k => 
+        k.endsWith(':' + sensorType) || k.toLowerCase() === sensorType.toLowerCase()
       )
-      if (matchingKey) {
-        return localHistoryMap.value[matchingKey]
+      
+      if (suffixMatch) {
+        return localHistoryMap.value[suffixMatch]
       }
     }
     // Return first available if no match found
@@ -485,6 +494,20 @@ const allDataValues = computed(() => {
 })
 
 const graphMinMax = computed(() => {
+  // Check if we should allow negative values (only for temperature-like sensors)
+  const isNegativeAllowed = (() => {
+    // Multi-sensor check
+    if (props.availableSensors && props.availableSensors.length > 1 && selectedSensorKeys.value.size > 0) {
+      for (const key of selectedSensorKeys.value) {
+        if (key.toLowerCase().includes('temp')) return true
+      }
+      return false
+    }
+    // Single sensor check
+    const currentSensor = props.selectedSensor || props.initialActiveSensor || ''
+    return currentSensor.toLowerCase().includes('temp') || currentSensor.toLowerCase().includes('rssi')
+  })()
+
   // If auto-zoom is enabled, calculate dynamic range based on actual data
   if (autoZoom.value) {
     const values = allDataValues.value
@@ -496,8 +519,15 @@ const graphMinMax = computed(() => {
     
     // Add 5% padding on each side for better visualization
     const padding = range * 0.05
+    
+    let min = Math.floor(dataMin - padding)
+    // Clamp to 0 if negative values are not allowed (e.g. CO, VOC, PM)
+    if (!isNegativeAllowed && min < 0) {
+      min = 0
+    }
+
     return {
-      min: Math.floor(dataMin - padding),
+      min,
       max: Math.ceil(dataMax + padding),
     }
   }
@@ -521,6 +551,11 @@ const graphMinMax = computed(() => {
   const range2 = max - min || 1
   let minWithPadding = min - range2 * 0.1
   let maxWithPadding = max + range2 * 0.1
+
+  // Clamp to 0 if negative values are not allowed
+  if (!isNegativeAllowed && minWithPadding < 0) {
+    minWithPadding = 0
+  }
 
   return {
     min: minWithPadding,
@@ -667,7 +702,7 @@ const chartData = computed<ChartData<'line'> | null>(() => {
         borderWidth: 2,
         data: sortedData.map(m => ({ x: m.time as unknown as number, y: m.value })),
         tension: 0.2,
-        fill: true,
+        fill: 'start',
         pointRadius: 0,
         pointHoverRadius: 8,
         pointHoverBorderWidth: 3,
