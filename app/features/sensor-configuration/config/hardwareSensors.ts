@@ -51,8 +51,8 @@ export const HARDWARE_SENSORS: HardwareSensorDefinition[] = [
     measurementLabels: { eco2: 'eCO2', tvoc: 'TCOV' }
   },
   {
-    hardwareKey: 'sht40',
-    name: 'SHT40',
+    hardwareKey: 'sht31',
+    name: 'SHT31',
     measurements: ['temperature', 'humidity'],
     measurementLabels: { temperature: 'Temp', humidity: 'Hum' }
   },

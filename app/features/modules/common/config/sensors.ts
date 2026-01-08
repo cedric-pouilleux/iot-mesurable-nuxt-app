@@ -32,12 +32,12 @@ export const SENSORS = {
   voc: { label: 'COV', unit: '/500', range: { min: 0, max: 500 }, type: 'gas' },
   tvoc: { label: 'TCOV', unit: 'ppb', range: { min: 0, max: 5000 }, type: 'gas' },
   co: { label: 'CO', unit: 'ppm', range: { min: 0, max: 1000 }, type: 'gas' },
-  
+
   // Weather sensors
   temperature: { label: 'Température', unit: '°C', range: { min: -10, max: 50 }, type: 'weather' },
   humidity: { label: 'Humidité', unit: '%', range: { min: 0, max: 100 }, type: 'weather' },
   pressure: { label: 'Pression', unit: 'hPa', range: { min: 300, max: 1100 }, type: 'weather' },
-  
+
   // Particulate Matter
   pm1: { label: 'PM1.0', unit: 'µg/m³', range: { min: 0, max: 5000 }, type: 'pm' },
   pm25: { label: 'PM2.5', unit: 'µg/m³', range: { min: 0, max: 5000 }, type: 'pm' },
@@ -53,7 +53,7 @@ export type SensorKey = keyof typeof SENSORS
 
 export const HARDWARE = {
   dht22: { name: 'DHT22', measures: ['temperature', 'humidity'] },
-  sht40: { name: 'SHT40', measures: ['temperature', 'humidity'] },
+  sht31: { name: 'SHT31', measures: ['temperature', 'humidity'] },
   bmp280: { name: 'BMP280', measures: ['temperature', 'pressure'] },
   mhz14a: { name: 'MH-Z14A', measures: ['co2'] },
   sgp40: { name: 'SGP40', measures: ['voc'] },
@@ -105,7 +105,7 @@ export function getNormalizationRatio(_sensorKey: string): number {
  */
 export function matchTopic(topic: string): string | undefined {
   const parts = topic.split('/')
-  
+
   // Handle 2-part legacy format: module/sensorType
   if (parts.length === 2) {
     const measurementType = parts[1]
@@ -115,21 +115,21 @@ export function matchTopic(topic: string): string | undefined {
     return undefined
   }
 
-  if (parts.length !== 3) return undefined
-  
-  const hardwareId = parts[1]
-  const measurementType = parts[2]
-  
+  if (parts.length < 3) return undefined
+
+  const measurementType = parts[parts.length - 1]
+  const hardwareId = parts[parts.length - 2]
+
   // Skip system topics
   if (['sensors', 'system', 'hardware'].includes(hardwareId)) {
     return undefined
   }
-  
+
   // All hardware uses canonical keys now - return composite key
   if (SENSORS[measurementType as SensorKey]) {
     return `${hardwareId}:${measurementType}`
   }
-  
+
   return undefined
 }
 
@@ -144,7 +144,7 @@ export function getHardware(id: string): HardwareDefinition | undefined {
  * Get hardware that measures a specific sensor type
  */
 export function getHardwareForSensor(sensorKey: string): HardwareDefinition | undefined {
-  const entry = Object.entries(HARDWARE).find(([_, hw]) => 
+  const entry = Object.entries(HARDWARE).find(([_, hw]) =>
     (hw.measures as readonly string[]).includes(sensorKey)
   )
   return entry?.[1]

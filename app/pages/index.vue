@@ -171,19 +171,32 @@ const handleZoneChanged = async () => {
 
 /**
  * Handle incoming MQTT message
- * Extracts module ID and routes message to appropriate handler
+ * Extracts module ID from topic and routes message to the matching module
+ * Module IDs are composite (moduleId@chipId), so we need to find the right one
  */
 const handleMqttMessage = (message: MqttMessage): void => {
   const topicParts = message.topic.split('/')
   if (topicParts.length < 2) return
 
-  const moduleId = topicParts[0]
+  const topicModuleId = topicParts[0]
 
-  // Add module if it doesn't exist
-  addModuleFromTopic(message.topic)
+  // Find the matching module by its composite ID prefix
+  // Module IDs are in format "moduleId@chipId", topic uses just "moduleId"
+  const matchingModule = modules.value.find(m => {
+    // Extract moduleId part from composite ID
+    const atIndex = m.id.indexOf('@')
+    const moduleIdPart = atIndex > 0 ? m.id.substring(0, atIndex) : m.id
+    return moduleIdPart === topicModuleId
+  })
 
-  // Process message for this module
-  handleModuleMessage(moduleId, message)
+  if (!matchingModule) {
+    // Module not yet loaded, try addModuleFromTopic (which is now a no-op)
+    addModuleFromTopic(message.topic)
+    return
+  }
+
+  // Process message using the composite module ID
+  handleModuleMessage(matchingModule.id, message)
 }
 
 // MQTT connection

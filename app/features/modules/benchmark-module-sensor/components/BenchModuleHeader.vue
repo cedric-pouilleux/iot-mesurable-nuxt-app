@@ -39,7 +39,7 @@
 
         <!-- Logs Button -->
         <NuxtLink 
-          :to="localePath({ name: 'logs', query: { search: moduleId, category: 'HARDWARE' } })" 
+          :to="localePath({ name: 'logs', query: { moduleId: moduleId, category: 'HARDWARE' } })" 
           target="_blank" 
           :title="$t('nav.logs')"
         >

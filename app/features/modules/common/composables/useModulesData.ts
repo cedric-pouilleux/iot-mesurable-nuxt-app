@@ -10,6 +10,16 @@ const MAX_DATA_POINTS = 5000
  * Composable for managing module data (device status and sensor data)
  * Handles MQTT messages and dashboard data loading for multiple modules
  */
+// Global state (Singleton)
+const modulesDeviceStatus = ref<Map<string, DeviceStatus>>(new Map())
+const modulesSensorData = ref<Map<string, SensorData>>(new Map())
+// Version counter to force reactivity updates
+const updateVersion = ref(0)
+
+/**
+ * Composable for managing module data (device status and sensor data)
+ * Handles MQTT messages and dashboard data loading for multiple modules
+ */
 export const useModulesData = () => {
   const {
     MQTT_TOPICS,
@@ -21,20 +31,23 @@ export const useModulesData = () => {
     mergeHardwareConfig,
   } = useMqttMessageHandler()
 
-  const modulesDeviceStatus = ref<Map<string, DeviceStatus>>(new Map())
-  const modulesSensorData = ref<Map<string, SensorData>>(new Map())
-
   /**
    * Get device status for a specific module
+   * Depends on updateVersion to trigger reactivity
    */
   const getModuleDeviceStatus = (moduleId: string): DeviceStatus | null => {
+    // Touch updateVersion to create dependency for Vue reactivity
+    void updateVersion.value
     return modulesDeviceStatus.value.get(moduleId) || null
   }
 
   /**
    * Get sensor data for a specific module
+   * Depends on updateVersion to trigger reactivity
    */
   const getModuleSensorData = (moduleId: string): SensorData => {
+    // Touch updateVersion to create dependency for Vue reactivity
+    void updateVersion.value
     return modulesSensorData.value.get(moduleId) || {}
   }
 
@@ -80,10 +93,12 @@ export const useModulesData = () => {
 
       // Trigger reactivity
       modulesDeviceStatus.value.set(moduleId, { ...deviceStatus })
+      updateVersion.value++
     }
     // Handle sensor measurement messages
     else if (message.value !== null) {
       const sensorKey = matchTopic(message.topic)
+
 
       if (sensorKey) {
         const newData: SensorDataPoint = {
@@ -105,23 +120,25 @@ export const useModulesData = () => {
 
         // Trigger reactivity for history
         modulesSensorData.value.set(moduleId, { ...sensorData })
+        updateVersion.value++
 
         // ALSO update DeviceStatus value (Real-time Value)
         // Extract sensor type from composite key for status lookup
         const parts = sensorKey.split(':')
         const sensorType = parts.length === 2 ? parts[1] : sensorKey
-        
+
         if (!deviceStatus.sensors) deviceStatus.sensors = {}
         if (!deviceStatus.sensors[sensorType]) deviceStatus.sensors[sensorType] = { status: 'ok' }
-        
+
         deviceStatus.sensors[sensorType] = {
           ...deviceStatus.sensors[sensorType],
           value: message.value,
           status: 'ok'
         }
-        
+
         // Update reactivity for status
         modulesDeviceStatus.value.set(moduleId, { ...deviceStatus })
+        updateVersion.value++
       }
     }
   }
@@ -188,6 +205,7 @@ export const useModulesData = () => {
         sensorsConfig: { ...existingStatus.sensorsConfig, ...dashboardData.status.sensorsConfig },
         hardware: { ...existingStatus.hardware, ...dashboardData.status.hardware },
       })
+      updateVersion.value++
     }
 
     // Merge sensor data
@@ -199,7 +217,7 @@ export const useModulesData = () => {
       Object.entries(dashboardData.sensors).forEach(([key, values]) => {
         // Validation: verify if it's a known sensor (optional, but good for safety)
         // if (!sensorRegistry.get(key)) return 
-        
+
         // Ensure values is an array
         if (Array.isArray(values)) {
           newData[key] = processSensorData(values) as SensorDataPoint[]
@@ -207,12 +225,13 @@ export const useModulesData = () => {
       })
 
       const mergedData: SensorData = { ...existingData }
-      
+
       Object.entries(newData).forEach(([key, points]) => {
         mergedData[key] = mergeSensorData(existingData[key] || [], points)
       })
 
       modulesSensorData.value.set(moduleId, mergedData)
+      updateVersion.value++
     }
   }
 
@@ -226,6 +245,7 @@ export const useModulesData = () => {
   ): void => {
     initializeModule(moduleId)
     modulesSensorData.value.set(moduleId, { ...sensors })
+    updateVersion.value++
   }
 
   return {
