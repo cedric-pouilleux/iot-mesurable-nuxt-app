@@ -324,8 +324,14 @@ const shouldShowTrend = computed(() => {
   return true
 })
 
-// Display value: show '--' if not connected, otherwise show the value
+// Display value: show '--' if not connected AND sensor doesn't have ok status
+// This ensures we show values even if health cache is stale after sensor restart
 const displayRawValue = computed(() => {
+  // If sensor has valid data and ok status, show it regardless of health cache
+  if (activeSensor.value?.status === 'ok' && rawValue.value !== undefined) {
+    return rawValue.value
+  }
+  // Otherwise, fall back to connection status check
   if (connectionStatus.value !== 'connected') return undefined
   return rawValue.value
 })

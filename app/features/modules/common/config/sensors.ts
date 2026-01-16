@@ -54,11 +54,14 @@ export type SensorKey = keyof typeof SENSORS
 export const HARDWARE = {
   dht22: { name: 'DHT22', measures: ['temperature', 'humidity'] },
   sht31: { name: 'SHT31', measures: ['temperature', 'humidity'] },
+  scd41: { name: 'SCD41', measures: ['co2', 'temperature', 'humidity'] },
   bmp280: { name: 'BMP280', measures: ['temperature', 'pressure'] },
   mhz14a: { name: 'MH-Z14A', measures: ['co2'] },
+  mhz19e: { name: 'MH-Z19E', measures: ['co2'] },
   sgp40: { name: 'SGP40', measures: ['voc'] },
   sgp30: { name: 'SGP30', measures: ['eco2', 'tvoc'] },
   mq7: { name: 'MQ-7', measures: ['co'] },
+  tpm200a: { name: 'TPM200A-CO', measures: ['co'] },
   sps30: { name: 'SPS30', measures: ['pm1', 'pm25', 'pm4', 'pm10'] },
 } as const satisfies Record<string, HardwareDefinition>
 

@@ -105,6 +105,11 @@ const getItemLabel = (sensor: SensorItem) => {
   const isPmSensor = props.groupLabel === 'Particules fines' || /^pm\d/.test(sensor.key)
   if (isPmSensor) return sensor.label
   
+  // CO2 group with multiple sensors: show hardware name instead of generic "CO2"
+  if ((props.groupLabel === 'CO2' || sensor.key.includes('co2')) && props.sensors.length > 1) {
+    return sensor.model || sensor.label
+  }
+  
   // COV group: show model with sensor type
   if (props.groupLabel === 'COV' && sensor.model) {
     return `${sensor.model} (${sensor.label})`

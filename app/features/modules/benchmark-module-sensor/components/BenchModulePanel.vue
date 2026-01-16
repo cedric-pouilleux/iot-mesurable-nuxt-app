@@ -251,6 +251,7 @@ const activeGroups = computed(() => {
         key: dataKey, // Use the actual data key for history lookup
         label: displayLabel,
         sensorLabel, // Keep pure sensor label for card title
+        model: hardwareName, // Add hardware name for dropdown display
         value: lastValue,
         status: statusData.status,
         interval: statusData.interval
