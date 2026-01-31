@@ -8,6 +8,7 @@ export default defineConfig({
       target: 'app/api/client.ts',
       schemas: 'app/api/model',
       client: 'fetch',
+      baseUrl: '',
     },
   },
 })
