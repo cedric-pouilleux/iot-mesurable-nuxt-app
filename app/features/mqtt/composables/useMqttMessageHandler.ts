@@ -61,15 +61,18 @@ export function mergeSystemData(status: DeviceStatus, metadata: Partial<SystemIn
 /**
  * Merge system configuration data (IP, MAC, flash, etc.) into device status
  * @param status - Current device status
- * @param metadata - Incoming system config metadata
+ * @param metadata - Incoming system config metadata (includes moduleType from ESP32)
  */
-export function mergeSystemConfig(status: DeviceStatus, metadata: Partial<SystemInfo>): void {
+export function mergeSystemConfig(status: DeviceStatus, metadata: Partial<SystemInfo> & { moduleType?: string }): void {
   if (!status.system) status.system = {}
 
   if (metadata.ip) status.system.ip = metadata.ip
   if (metadata.mac) status.system.mac = metadata.mac
   if (metadata.uptimeStart !== undefined) status.system.uptimeStart = metadata.uptimeStart
   if (metadata.flash) status.system.flash = metadata.flash
+
+  // Extract moduleType from ESP32 system/config message
+  if (metadata.moduleType) status.moduleType = metadata.moduleType
 
   // Internal tracking for uptime calculation
   status.system._configReceivedAt = Math.floor(Date.now() / 1000)

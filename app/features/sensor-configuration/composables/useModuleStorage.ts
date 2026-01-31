@@ -17,7 +17,8 @@ export function useModuleStorage(moduleId: Ref<string>) {
   const error = ref<string | null>(null)
 
   const config = useRuntimeConfig()
-  const apiUrl = config.public.apiBase || 'http://localhost:3001'
+  // In production, use relative URLs (nginx proxy). In dev, use localhost:3001
+  const apiUrl = config.public.apiBase ?? (process.dev ? 'http://localhost:3001' : '')
 
   const fetchStorageStats = async () => {
     if (!moduleId.value) return

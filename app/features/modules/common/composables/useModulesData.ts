@@ -69,6 +69,21 @@ export const useModulesData = () => {
   }
 
   /**
+   * Initialize module with type from /api/modules response
+   * This ensures moduleType is available even if /status endpoint fails
+   */
+  const initializeModuleWithType = (moduleId: string, moduleType: string): void => {
+    initializeModule(moduleId)
+    const deviceStatus = modulesDeviceStatus.value.get(moduleId)!
+    // Only set if not already defined (preserve value from API status)
+    if (!deviceStatus.moduleType) {
+      deviceStatus.moduleType = moduleType
+      modulesDeviceStatus.value.set(moduleId, { ...deviceStatus })
+      updateVersion.value++
+    }
+  }
+
+  /**
    * Handle incoming MQTT message for a module
    */
   const handleModuleMessage = (moduleId: string, message: MqttMessage): void => {
@@ -200,6 +215,8 @@ export const useModulesData = () => {
       modulesDeviceStatus.value.set(moduleId, {
         ...existingStatus,
         ...dashboardData.status,
+        // Preserve moduleType from existing if not in new status
+        moduleType: dashboardData.status.moduleType || existingStatus.moduleType,
         system: { ...existingStatus.system, ...dashboardData.status.system },
         sensors: { ...existingStatus.sensors, ...dashboardData.status.sensors },
         sensorsConfig: { ...existingStatus.sensorsConfig, ...dashboardData.status.sensorsConfig },
@@ -256,5 +273,6 @@ export const useModulesData = () => {
     handleModuleMessage,
     loadModuleDashboard,
     updateModuleSensorData,
+    initializeModuleWithType,
   }
 }

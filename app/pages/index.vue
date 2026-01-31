@@ -83,7 +83,7 @@ interface ModuleGroup {
 
 const { loadDbSize } = useDatabase()
 const { modules, error: modulesError, loadModules, addModuleFromTopic } = useModules()
-const { getModuleDeviceStatus, getModuleSensorData, handleModuleMessage, loadModuleDashboard } = useModulesData()
+const { getModuleDeviceStatus, getModuleSensorData, handleModuleMessage, loadModuleDashboard, initializeModuleWithType } = useModulesData()
 
 const {
   isLoading: dashboardLoading,
@@ -259,6 +259,15 @@ const reloadPage = (): void => {
 onMounted(async () => {
   isInitialLoading.value = true
   await Promise.all([loadModules(), fetchZones(), loadDbSize()])
+  
+  // Initialize moduleType for each module from API /modules response
+  // This ensures moduleType is available even if /status endpoint fails
+  modules.value.forEach(module => {
+    if (module.type && module.type !== 'unknown') {
+      initializeModuleWithType(module.id, module.type)
+    }
+  })
+  
   connectMqtt()
   await loadAllDashboards()
   isInitialLoading.value = false

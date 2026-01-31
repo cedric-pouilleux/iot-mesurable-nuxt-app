@@ -22,7 +22,8 @@ export function useModuleManifest(moduleType: Ref<string | undefined | null>) {
     const error = ref<string | null>(null)
 
     const config = useRuntimeConfig()
-    const apiUrl = config.public.apiBase || 'http://localhost:3001'
+    // In production, use relative URLs (nginx proxy). In dev, use localhost:3001
+    const apiUrl = config.public.apiBase ?? (process.dev ? 'http://localhost:3001' : '')
 
     const fetchManifest = async () => {
         const type = moduleType.value
