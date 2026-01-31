@@ -2,7 +2,7 @@ import { defineConfig } from 'orval'
 
 export default defineConfig({
   api: {
-    input: 'http://localhost:3001/documentation/json',
+    input: './openapi.json',
     output: {
       mode: 'split',
       target: 'app/api/client.ts',

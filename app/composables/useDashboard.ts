@@ -1,5 +1,5 @@
 import type { DeviceStatus, SensorDataPoint, DashboardSensorData } from '~/features/modules/common/types'
-import { getApiModulesIdStatus, getApiModulesIdHistory } from '../api/client'
+import { getApiModulesIdStatus, getApiModulesIdHistory } from '#api/client'
 import { processSensorData } from '~/utils/data-processing'
 
 interface RawSensorDataPoint {

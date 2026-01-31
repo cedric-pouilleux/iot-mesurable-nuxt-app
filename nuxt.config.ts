@@ -12,6 +12,7 @@ export default defineNuxtConfig({
     '@module-card': path.resolve(__dirname, 'app/features/modules/common/card'),
     '@sensors-options': path.resolve(__dirname, 'app/features/modules/common/sensors-module-options'),
     '@benchmark-module-sensors': path.resolve(__dirname, 'app/features/modules/benchmark-module-sensor'),
+    '#api': path.resolve(__dirname, 'app/api'),
   },
 
   modules: ['@nuxtjs/tailwindcss', '@nuxt/icon', '@nuxtjs/color-mode', '@nuxtjs/i18n'],

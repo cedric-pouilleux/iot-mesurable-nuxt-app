@@ -1,5 +1,5 @@
-import type { GetApiModules200Item } from '../../../../api/model'
-import { getApiModules } from '../../../../api/client'
+import type { GetApiModules200Item } from '#api/model'
+import { getApiModules } from '#api/client'
 
 export const useModules = () => {
   const modules = ref<GetApiModules200Item[]>([])

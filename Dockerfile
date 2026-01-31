@@ -8,6 +8,7 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
+RUN npm run gen:api
 RUN npm run build
 
 # Runtime stage
