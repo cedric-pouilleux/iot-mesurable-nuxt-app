@@ -70,7 +70,7 @@ export default defineNuxtConfig({
   // Proxy interne pour éviter les problèmes CORS et Docker Network
   routeRules: {
     // En dev local sans docker, fallback sur 127.0.0.1:3001 (IPv4 explicite)
-    '/api/**': { proxy: `${process.env.API_URL || 'http://127.0.0.1:3001'}/api/**` },
+    '/api/**': { proxy: `${process.env.API_URL || 'http://127.0.0.1:3001'}/api/**`.replace('/api/api/', '/api/') },
   },
 })
 
