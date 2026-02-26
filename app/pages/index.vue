@@ -171,31 +171,30 @@ const handleZoneChanged = async () => {
 
 /**
  * Handle incoming MQTT message
- * Extracts module ID from topic and routes message to the matching module
- * Module IDs are composite (moduleId@chipId), so we need to find the right one
+ * Topics use mesurable/{chipId}/... format
+ * Module IDs in the API now match chipId directly
  */
 const handleMqttMessage = (message: MqttMessage): void => {
   const topicParts = message.topic.split('/')
-  if (topicParts.length < 2) return
+  // New format: mesurable/{chipId}/{subtopic}/...
+  if (topicParts.length < 3 || topicParts[0] !== 'mesurable') return
 
-  const topicModuleId = topicParts[0]
+  const chipId = topicParts[1]
 
-  // Find the matching module by its composite ID prefix
-  // Module IDs are in format "moduleId@chipId", topic uses just "moduleId"
+  // Find the matching module by chipId
   const matchingModule = modules.value.find(m => {
-    // Extract moduleId part from composite ID
+    // Module ID is chipId in new format, or could be moduleId@chipId in legacy
     const atIndex = m.id.indexOf('@')
-    const moduleIdPart = atIndex > 0 ? m.id.substring(0, atIndex) : m.id
-    return moduleIdPart === topicModuleId
+    const moduleChipId = atIndex > 0 ? m.id.substring(atIndex + 1) : m.id
+    return moduleChipId === chipId || m.id === chipId
   })
 
   if (!matchingModule) {
-    // Module not yet loaded, try addModuleFromTopic (which is now a no-op)
     addModuleFromTopic(message.topic)
     return
   }
 
-  // Process message using the composite module ID
+  // Process message using the module ID
   handleModuleMessage(matchingModule.id, message)
 }
 

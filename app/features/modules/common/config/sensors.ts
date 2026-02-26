@@ -103,28 +103,30 @@ export function getNormalizationRatio(_sensorKey: string): number {
 
 /**
  * Match MQTT topic to composite sensor key
- * Handles 3-part format: module/hardware/measurement
- * Returns: hardware_id:sensor_type (e.g., "dht22:temperature")
+ * Handles mesurable/{chipId}/data/{hardwareId}/{sensorType} format
+ * Returns: hardware_id:sensor_type (e.g., "scd41:temperature")
  */
 export function matchTopic(topic: string): string | undefined {
   const parts = topic.split('/')
 
-  // Handle 2-part legacy format: module/sensorType
-  if (parts.length === 2) {
-    const measurementType = parts[1]
-    if (SENSORS[measurementType as SensorKey]) {
-      return measurementType
+  // New format: mesurable/{chipId}/data/{hardwareId}/{sensorType}
+  if (parts.length === 5 && parts[0] === 'mesurable' && parts[2] === 'data') {
+    const hardwareId = parts[3]
+    const sensorType = parts[4]
+    if (SENSORS[sensorType as SensorKey]) {
+      return `${hardwareId}:${sensorType}`
     }
     return undefined
   }
 
+  // Legacy: skip non-data topics
   if (parts.length < 3) return undefined
 
   const measurementType = parts[parts.length - 1]
   const hardwareId = parts[parts.length - 2]
 
   // Skip system topics
-  if (['sensors', 'system', 'hardware'].includes(hardwareId)) {
+  if (['sensors', 'system', 'hardware', 'data', 'announce', 'status', 'config', 'log'].includes(hardwareId)) {
     return undefined
   }
 

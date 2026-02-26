@@ -20,25 +20,14 @@ export const useModules = () => {
 
   const addModuleFromTopic = (topic: string) => {
     const topicParts = topic.split('/')
-    if (topicParts.length < 2) return null
+    // New format: mesurable/{chipId}/{subtopic}/...
+    if (topicParts.length < 3 || topicParts[0] !== 'mesurable') return null
 
-    const moduleId = topicParts[0]
+    const chipId = topicParts[1]
 
     // DISABLED: Automatic module addition from MQTT topics
-    // This was causing duplicate modules to appear when old firmware (without chipId) published.
-    // Now we rely solely on the API (which uses composite IDs) as the source of truth.
+    // We rely solely on the API (which uses chipId as module_id) as the source of truth.
     // Modules are loaded via loadModules() which fetches from /api/modules
-
-    // if (!modules.value.find(m => m.id === moduleId)) {
-    //   // Optimistic update
-    //   modules.value.push({
-    //     id: moduleId,
-    //     name: moduleId,
-    //     type: 'unknown',
-    //     status: null,
-    //   })
-    //   return moduleId
-    // }
 
     return null
   }
