@@ -14,11 +14,11 @@ Dashboard IoT construit avec Nuxt 3 pour visualiser les données des modules en 
 
 ## Ports et URLs
 
-| Service | URL dev | URL prod |
-|---------|---------|----------|
-| Frontend | http://localhost:3000 | via Nginx :80 |
-| API Backend | http://localhost:3001 | via Nginx /api |
-| Swagger | http://localhost:3001/documentation | — |
+| Service     | URL dev                             | URL prod       |
+| ----------- | ----------------------------------- | -------------- |
+| Frontend    | http://localhost:3000               | via Nginx :80  |
+| API Backend | http://localhost:3001               | via Nginx /api |
+| Swagger     | http://localhost:3001/documentation | —              |
 
 ## Génération des types API
 

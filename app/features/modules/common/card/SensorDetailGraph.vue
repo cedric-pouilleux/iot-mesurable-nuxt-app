@@ -168,9 +168,9 @@ interface SensorItem {
 
 interface Props {
   moduleId: string // Required for loading data with different buckets
-  selectedSensor: string | null
+  selectedSensor?: string | null
   initialActiveSensor?: string | null // Pre-select this sensor from the card
-  history: SensorDataPoint[]
+  history?: SensorDataPoint[]
   sensorLabel: string
   sensorColor: string
   sensorUnit: string
@@ -186,7 +186,7 @@ const props = withDefaults(defineProps<Props>(), {
   sensorHistoryMap: () => ({}),
 })
 
-const emit = defineEmits<{
+defineEmits<{
   close: []
 }>()
 
@@ -332,11 +332,8 @@ const fetchGraphData = async () => {
   isLoadingBucket.value = true
 
   try {
-    // Calculate days from selectedDurationHours
-    const days = Math.ceil(selectedDurationHours.value / 24) || 1
-
     // Load data with the new bucket directly
-    const newData = await loadHistory(props.moduleId, days, selectedBucket.value)
+    const newData = await loadHistory(props.moduleId, selectedDuration.value, selectedBucket.value)
 
     if (newData) {
       localHistoryMap.value = newData

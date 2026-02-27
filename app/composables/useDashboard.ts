@@ -39,14 +39,14 @@ export const useDashboard = () => {
    */
   const loadHistory = async (
     moduleId: string,
-    days: number = 1,
+    duration: string = '24h',
     bucket: string = 'auto'
   ): Promise<Record<string, SensorDataPoint[]> | null> => {
     if (!moduleId) return null
 
     try {
       const response = await getApiModulesIdHistory(moduleId, {
-        days: days.toString(),
+        duration,
         bucket,
       } as any)
       const sensors = (response.data as Record<string, unknown>) || {}
@@ -72,7 +72,7 @@ export const useDashboard = () => {
    */
   const loadDashboard = async (
     moduleId: string,
-    days: number = 1
+    duration: string = '24h'
   ): Promise<{
     status: DeviceStatus | null
     sensors: Record<string, SensorDataPoint[]>
@@ -85,7 +85,7 @@ export const useDashboard = () => {
     try {
       const [status, sensors] = await Promise.all([
         loadStatus(moduleId),
-        loadHistory(moduleId, days),
+        loadHistory(moduleId, duration),
       ])
 
       return {

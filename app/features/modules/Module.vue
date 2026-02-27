@@ -1,28 +1,52 @@
 <template>
-  <div class="mb-6">
-    <ModuleHeader
-      :module-name="module.name"
-      :module-id="moduleId"
-      :device-status="deviceStatus"
-      :options-panel-open="optionsPanelOpen"
-      :is-online="isOnline"
-      @toggle-options="optionsPanelOpen = !optionsPanelOpen"
-    />
-    <SensorsModuleOptions
-      :is-open="optionsPanelOpen"
-      :device-status="deviceStatus"
-      :module-id="moduleId"
-      :sensor-history-map="sensorData"
-      @zone-changed="$emit('zone-changed')"
-      @open-zone-drawer="$emit('open-zone-drawer')"
-    />
-    <div
-      class="grid gap-4 cards-transition"
-      style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr))"
-      :class="{ 'cards-pushed': optionsPanelOpen }"
-    >
+  <ModuleLayout
+    :title="moduleTypeLabel"
+    :is-online="isOnline"
+    :loading="isLoading"
+    :loading-text="$t('loading.moduleData', { name: module.name })"
+    :options-panel-open="optionsPanelOpen"
+    @toggle-options="optionsPanelOpen = !optionsPanelOpen"
+  >
+    <template #header-actions>
+      <UIButton
+        icon="tabler:settings"
+        :icon-class="{ 'rotate-90': optionsPanelOpen }"
+        :variant="optionsPanelOpen ? 'blue' : 'ghost'"
+        size="small"
+        :clickable="true"
+        :label="$t('common.options')"
+        :title="$t('common.options')"
+        @click="optionsPanelOpen = !optionsPanelOpen"
+      />
+      <NuxtLink
+        :to="localePath({ name: 'logs', query: { moduleId: moduleId, category: 'HARDWARE' } })"
+        target="_blank"
+        :title="$t('nav.logs')"
+      >
+        <UIButton
+          icon="tabler:notes"
+          variant="ghost"
+          size="small"
+          :label="$t('nav.logs')"
+          :clickable="true"
+        />
+      </NuxtLink>
+    </template>
+
+    <template #options-panel>
+      <SensorsModuleOptions
+        :is-open="optionsPanelOpen"
+        :device-status="deviceStatus"
+        :module-id="moduleId"
+        :sensor-history-map="sensorData"
+        @zone-changed="$emit('zone-changed')"
+        @open-zone-drawer="$emit('open-zone-drawer')"
+      />
+    </template>
+
+    <template #cards>
       <UnifiedSensorCard
-        v-for="group in activeGroups"
+        v-for="group in sensorGraphs"
         :key="group.type"
         :label="group.label"
         :sensors="group.sensors"
@@ -38,37 +62,42 @@
         @update:active-sensor="handleActiveSensorChange(group.type, $event)"
         @open-options="optionsPanelOpen = true"
       />
-    </div>
-    <Transition name="slide-panel">
-      <SensorDetailGraph
-        v-if="selectedGraphSensor"
-        :module-id="moduleId"
-        :selected-sensor="selectedGraphSensor"
-        :initial-active-sensor="selectedGraphActiveSensor"
-        :history="getSensorHistory(selectedGraphSensor)"
-        :sensor-label="selectedGraphGroup?.label || getSensorLabel(selectedGraphSensor)"
-        :sensor-color="getSensorColor(selectedGraphSensor)"
-        :sensor-unit="getSensorUnit(selectedGraphSensor)"
-        :available-sensors="selectedGraphAvailableSensors"
-        :sensor-history-map="selectedGraphHistoryMap"
-        @close="selectedGraphSensor = null"
-      />
-    </Transition>
-  </div>
+    </template>
+
+    <template #extra>
+      <Transition name="slide-panel">
+        <SensorDetailGraph
+          v-if="selectedGraphSensor"
+          :module-id="moduleId"
+          :selected-sensor="selectedGraphSensor"
+          :initial-active-sensor="selectedGraphActiveSensor"
+          :history="getSensorHistory(selectedGraphSensor)"
+          :sensor-label="selectedGraphGroup?.label || getSensorLabel(selectedGraphSensor)"
+          :sensor-color="getSensorColor(selectedGraphSensor)"
+          :sensor-unit="getSensorUnit(selectedGraphSensor)"
+          :available-sensors="selectedGraphAvailableSensors"
+          :sensor-history-map="selectedGraphHistoryMap"
+          @close="selectedGraphSensor = null"
+        />
+      </Transition>
+    </template>
+  </ModuleLayout>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { DeviceStatus, SensorData, SensorDataPoint } from './common/types'
+import type { SensorDataPoint } from './common/types'
 import { useChartSettings } from '~/features/modules/common/module-panel/composables'
-import ModuleHeader from './common/ModuleHeader.vue'
+import ModuleLayout from './common/ModuleLayout.vue'
 import SensorsModuleOptions from './common/module-panel/SensorsModuleOptions.vue'
 import SensorDetailGraph from './common/card/SensorDetailGraph.vue'
 import UnifiedSensorCard from './common/card/UnifiedSensorCard.vue'
+import UIButton from '~/components/design-system/UIButton/UIButton.vue'
 import { getSensorLabel, getSensorColor, getSensorUnit } from './common/utils/sensors'
 import { getSensorTypeFromKey, getHardwareIdFromKey, getHardware } from './common/config/sensors'
 import type { Module } from './common/types'
 import { useModulesData } from './common/composables'
+import { useDashboard } from '~/composables/useDashboard'
 
 defineEmits<{
   (e: 'zone-changed'): void
@@ -93,6 +122,19 @@ const selectedGraphActiveSensor = ref<string | null>(null) // Active sensor from
 const isToggling = ref(false)
 
 const { debouncedGraphDuration: graphDuration } = useChartSettings(computed(() => moduleId.value))
+const { loadDashboard, loadHistory } = useDashboard()
+const { loadModuleDashboard } = useModulesData()
+
+const { t } = useI18n()
+const localePath = useLocalePath()
+
+const isLoading = ref(true)
+
+const moduleTypeLabel = computed(() => {
+  const type = deviceStatus.value?.moduleType
+  if (!type) return t('modules.types.unknown') || 'Module inconnu'
+  return t(`modules.types.${type}`) || type
+})
 
 // Track active sensor per group type (updated by UnifiedSensorCard)
 const activeSensorByGroup = reactive<Record<string, string>>({})
@@ -101,6 +143,25 @@ const activeSensorByGroup = reactive<Record<string, string>>({})
 const handleActiveSensorChange = (groupType: string, sensorKey: string) => {
   activeSensorByGroup[groupType] = sensorKey
 }
+
+onMounted(async () => {
+  isLoading.value = true
+  const result = await loadDashboard(moduleId.value, graphDuration.value)
+  if (result) {
+    loadModuleDashboard(moduleId.value, result)
+  }
+  isLoading.value = false
+})
+
+watch(graphDuration, async (newDuration, oldDuration) => {
+  if (newDuration === oldDuration) return
+  isLoading.value = true
+  const sensors = await loadHistory(moduleId.value, newDuration)
+  if (sensors) {
+    loadModuleDashboard(moduleId.value, { status: null, sensors })
+  }
+  isLoading.value = false
+})
 
 // Define groups by sensor_type (the keys come from composite keys now)
 const sensorGroupsDefinition = [
@@ -118,10 +179,6 @@ const sensorGroupsDefinition = [
   },
 ]
 
-// ============================================================================
-// Computed: Sensor Data Access
-// ============================================================================
-
 const getSensorData = (sensorName: string) => {
   const status = sensorData.value[sensorName] || {}
   const config = deviceStatus.value?.sensorsConfig?.sensors?.[sensorName] || {}
@@ -133,7 +190,7 @@ const getSensorData = (sensorName: string) => {
 }
 
 // Build active groups from both sensorData and deviceStatus
-const activeGroups = computed(() => {
+const sensorGraphs = computed(() => {
   return (
     sensorGroupsDefinition
       .map(group => {
@@ -245,10 +302,6 @@ const activeGroups = computed(() => {
   )
 })
 
-// ============================================================================
-// History Helpers
-// ============================================================================
-
 const getSensorHistory = (key: string) => {
   // Try direct lookup first (works for composite keys like "dht22:temperature")
   const directData = sensorData.value[key]
@@ -279,10 +332,6 @@ const getHistoryMap = (group: any) => {
   return map
 }
 
-// ============================================================================
-// Graph Toggle
-// ============================================================================
-
 const toggleGraph = (sensorType: string, activeSensorKey?: string) => {
   if (isToggling.value) return
   isToggling.value = true
@@ -309,7 +358,7 @@ const isCardPanelOpen = (group: { sensors: { key: string }[] }) => {
 const selectedGraphGroup = computed(() => {
   if (!selectedGraphSensor.value) return null
   return (
-    activeGroups.value.find(g =>
+    sensorGraphs.value.find(g =>
       g.sensors.some(s => getSensorTypeFromKey(s.key) === selectedGraphSensor.value)
     ) || null
   )
@@ -324,12 +373,7 @@ const selectedGraphHistoryMap = computed<Record<string, SensorDataPoint[]>>(() =
   return getHistoryMap(selectedGraphGroup.value)
 })
 </script>
-
 <style scoped>
-.cards-transition {
-  transition: transform 0.1s linear;
-}
-
 .options-panel-transition {
   transition: all 0.3s linear;
 }

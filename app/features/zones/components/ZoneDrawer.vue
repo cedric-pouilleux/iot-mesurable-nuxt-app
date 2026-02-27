@@ -1,12 +1,4 @@
 <template>
-  <!--
-    ZoneDrawer.vue
-    ==============
-    Left-side drawer for zone CRUD operations.
-    Slides in from left with smooth animation.
-  -->
-
-  <!-- Backdrop -->
   <Teleport to="body">
     <Transition name="fade">
       <div v-if="isOpen" class="fixed inset-0 bg-black/40 z-40" @click="$emit('close')" />
@@ -182,12 +174,6 @@
 </template>
 
 <script setup lang="ts">
-/**
- * ZoneDrawer
- *
- * Left-side drawer for zone management (CRUD).
- * Uses useZones composable for state management.
- */
 import { ref, watch, nextTick } from 'vue'
 import { useZones } from '~/features/zones/composables/useZones'
 

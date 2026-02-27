@@ -38,7 +38,7 @@ import { useModules, useModulesData } from '~/features/modules/common/composable
 import { useDashboard } from '~/composables/useDashboard'
 import { useMqtt } from '~/features/mqtt/composables/useMqtt'
 import { useZones } from '~/features/zones/composables/useZones'
-import { useChartSettings } from '~/features/modules/common/module-panel/composables'
+
 import Module from '~/features/modules/Module.vue'
 import ZoneGroup from '~/features/zones/components/ZoneGroup.vue'
 
@@ -52,38 +52,13 @@ const { loadDbSize } = useDatabase()
 const { zones, fetchZones } = useZones()
 const { t } = useI18n()
 const { modules, error: modulesError, loadModules, addModuleFromTopic } = useModules()
-const { handleModuleMessage, loadModuleDashboard, initializeModuleWithType } = useModulesData()
+const { handleModuleMessage, initializeModuleWithType } = useModulesData()
 
-const {
-  isLoading: dashboardLoading,
-  error: dashboardError,
-  loadDashboard: fetchDashboard,
-} = useDashboard()
+const { error: dashboardError } = useDashboard()
 
 const isInitialLoading = ref(true)
-const isLoading = computed(() => isInitialLoading.value || dashboardLoading.value)
+const isLoading = computed(() => isInitialLoading.value)
 const error = computed(() => modulesError.value || dashboardError.value)
-const { graphDuration } = useChartSettings()
-
-/**
- * Convert graphDuration string to days for API
- */
-const getApiDaysForDuration = (duration: string): number => {
-  switch (duration) {
-    case '1h':
-      return 1 // API minimum is 1 day, frontend filters further
-    case '6h':
-      return 1
-    case '12h':
-      return 1
-    case '24h':
-      return 1
-    case '7j':
-      return 7
-    default:
-      return 7
-  }
-}
 
 const isZoneDrawerOpen = ref(false)
 
@@ -152,45 +127,6 @@ const { connect: connectMqtt, disconnect: disconnectMqtt } = useMqtt({
   onMessage: handleMqttMessage,
 })
 
-/**
- * Load dashboard data for all modules (status + history)
- * Uses graphDuration to determine how many days of history to load
- */
-const loadAllDashboards = async (): Promise<void> => {
-  const days = getApiDaysForDuration(graphDuration.value)
-  const promises = modules.value.map(async module => {
-    const result = await fetchDashboard(module.id, days)
-    if (result) {
-      loadModuleDashboard(module.id, result)
-    }
-  })
-  await Promise.all(promises)
-}
-
-/**
- * Reload history only for all modules (when duration changes)
- */
-const loadHistoryForAllModules = async (): Promise<void> => {
-  const days = getApiDaysForDuration(graphDuration.value)
-
-  const { loadHistory } = useDashboard()
-
-  const promises = modules.value.map(async module => {
-    const sensors = await loadHistory(module.id, days)
-    if (sensors) {
-      loadModuleDashboard(module.id, { status: null, sensors })
-    }
-  })
-  await Promise.all(promises)
-}
-
-// Watch for graph duration changes
-watch(graphDuration, async () => {
-  if (modules.value.length > 0) {
-    await loadHistoryForAllModules()
-  }
-})
-
 onMounted(async () => {
   isInitialLoading.value = true
   await Promise.all([loadModules(), fetchZones(), loadDbSize()])
@@ -204,7 +140,6 @@ onMounted(async () => {
   })
 
   connectMqtt()
-  await loadAllDashboards()
   isInitialLoading.value = false
 })
 
