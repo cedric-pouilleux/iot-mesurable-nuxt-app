@@ -1,11 +1,10 @@
-/**
- * Types for the modules feature
- * Contains sensor, device, hardware, and system types
- */
-
 // ============================================================================
 // Sensor Types
 // ============================================================================
+export interface Module {
+  id: string
+  name: string
+}
 
 export interface SensorDataPoint {
   time: Date

@@ -1,115 +1,98 @@
 <template>
   <div class="mb-6">
-    <div v-if="!props.deviceStatus" class="text-center py-8 text-gray-400">
-      <div
-        class="animate-spin w-8 h-8 border-2 border-gray-300 border-t-emerald-500 rounded-full mx-auto mb-4"
-      ></div>
-      {{ $t('loading.default') }} {{ moduleName }}...
+    <ModuleHeader
+      :module-name="module.name"
+      :module-id="moduleId"
+      :device-status="deviceStatus"
+      :options-panel-open="optionsPanelOpen"
+      :is-online="isOnline"
+      @toggle-options="optionsPanelOpen = !optionsPanelOpen"
+    />
+    <SensorsModuleOptions
+      :is-open="optionsPanelOpen"
+      :device-status="deviceStatus"
+      :module-id="moduleId"
+      :sensor-history-map="sensorData"
+      @zone-changed="$emit('zone-changed')"
+      @open-zone-drawer="$emit('open-zone-drawer')"
+    />
+    <div
+      class="grid gap-4 cards-transition"
+      style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr))"
+      :class="{ 'cards-pushed': optionsPanelOpen }"
+    >
+      <UnifiedSensorCard
+        v-for="group in activeGroups"
+        :key="group.type"
+        :label="group.label"
+        :sensors="group.sensors"
+        :history-map="getHistoryMap(group)"
+        :module-id="moduleId"
+        :color="group.color"
+        :graph-duration="graphDuration"
+        :initial-active-sensor-key="group.initialKey"
+        :is-panel-open="isCardPanelOpen(group)"
+        @toggle-graph="
+          toggleGraph(group.sensors[0]?.key, activeSensorByGroup[group.type] || group.initialKey)
+        "
+        @update:active-sensor="handleActiveSensorChange(group.type, $event)"
+        @open-options="optionsPanelOpen = true"
+      />
     </div>
-
-    <template v-else-if="props.deviceStatus">
-      <ModuleHeader
-        :module-name="moduleName"
+    <Transition name="slide-panel">
+      <SensorDetailGraph
+        v-if="selectedGraphSensor"
         :module-id="moduleId"
-        :device-status="deviceStatus"
-        :options-panel-open="optionsPanelOpen"
-        :is-online="isOnline"
-        @toggle-options="optionsPanelOpen = !optionsPanelOpen"
+        :selected-sensor="selectedGraphSensor"
+        :initial-active-sensor="selectedGraphActiveSensor"
+        :history="getSensorHistory(selectedGraphSensor)"
+        :sensor-label="selectedGraphGroup?.label || getSensorLabel(selectedGraphSensor)"
+        :sensor-color="getSensorColor(selectedGraphSensor)"
+        :sensor-unit="getSensorUnit(selectedGraphSensor)"
+        :available-sensors="selectedGraphAvailableSensors"
+        :sensor-history-map="selectedGraphHistoryMap"
+        @close="selectedGraphSensor = null"
       />
-
-      <SensorsModuleOptions
-        :is-open="optionsPanelOpen"
-        :device-status="deviceStatus"
-        :module-id="moduleId"
-        :sensor-history-map="sensorHistoryMap"
-        @zone-changed="$emit('zone-changed')"
-        @open-zone-drawer="$emit('open-zone-drawer', moduleId)"
-      />
-
-      <div
-        class="grid gap-4 cards-transition"
-        style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr))"
-        :class="{ 'cards-pushed': optionsPanelOpen }"
-      >
-        <UnifiedSensorCard
-          v-for="group in activeGroups"
-          :key="group.type"
-          :label="group.label"
-          :sensors="group.sensors"
-          :history-map="getHistoryMap(group)"
-          :module-id="moduleId"
-          :color="group.color"
-          :graph-duration="graphDuration"
-          :initial-active-sensor-key="group.initialKey"
-          :is-panel-open="isCardPanelOpen(group)"
-          @toggle-graph="
-            toggleGraph(group.sensors[0]?.key, activeSensorByGroup[group.type] || group.initialKey)
-          "
-          @update:active-sensor="handleActiveSensorChange(group.type, $event)"
-          @open-options="optionsPanelOpen = true"
-        />
-      </div>
-
-      <!-- Detailed Graph Overlay with multi-sensor support -->
-      <!-- Detailed Graph Overlay with multi-sensor support -->
-      <Transition name="slide-panel">
-        <SensorDetailGraph
-          v-if="selectedGraphSensor"
-          :module-id="props.moduleId"
-          :selected-sensor="selectedGraphSensor"
-          :initial-active-sensor="selectedGraphActiveSensor"
-          :history="getSensorHistory(selectedGraphSensor)"
-          :sensor-label="selectedGraphGroup?.label || getSensorLabel(selectedGraphSensor)"
-          :sensor-color="getSensorColor(selectedGraphSensor)"
-          :sensor-unit="getSensorUnit(selectedGraphSensor)"
-          :available-sensors="selectedGraphAvailableSensors"
-          :sensor-history-map="selectedGraphHistoryMap"
-          @close="selectedGraphSensor = null"
-        />
-      </Transition>
-    </template>
+    </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { DeviceStatus, SensorData, SensorDataPoint } from '../../common/types'
-import ModuleHeader from './ModuleHeader.vue'
-import SensorsModuleOptions from '~/features/modules/common/module-panel/SensorsModuleOptions.vue'
-import SensorDetailGraph from '../../common/card/SensorDetailGraph.vue'
-import UnifiedSensorCard from '../../common/card/UnifiedSensorCard.vue'
-import { getSensorLabel, getSensorColor, getSensorUnit } from '../../common/utils/sensors'
-import {
-  getSensorTypeFromKey,
-  getHardwareIdFromKey,
-  getHardware,
-} from '../../common/config/sensors'
+import type { DeviceStatus, SensorData, SensorDataPoint } from './common/types'
+import { useChartSettings } from '~/features/modules/common/module-panel/composables'
+import ModuleHeader from './common/ModuleHeader.vue'
+import SensorsModuleOptions from './common/module-panel/SensorsModuleOptions.vue'
+import SensorDetailGraph from './common/card/SensorDetailGraph.vue'
+import UnifiedSensorCard from './common/card/UnifiedSensorCard.vue'
+import { getSensorLabel, getSensorColor, getSensorUnit } from './common/utils/sensors'
+import { getSensorTypeFromKey, getHardwareIdFromKey, getHardware } from './common/config/sensors'
+import type { Module } from './common/types'
+import { useModulesData } from './common/composables'
 
-interface Props {
-  moduleId: string
-  moduleName: string
-  deviceStatus: DeviceStatus | null
-  sensorData: SensorData
-}
-
-const emit = defineEmits<{
+defineEmits<{
   (e: 'zone-changed'): void
-  (e: 'open-zone-drawer', moduleId: string): void
+  (e: 'open-zone-drawer'): void
 }>()
 
-const props = withDefaults(defineProps<Props>(), {
-  sensorData: () => ({}), // Now uses composite keys dynamically
-})
+const props = defineProps<{
+  module: Module
+}>()
+
+const { getModuleSensorData, getModuleDeviceStatus } = useModulesData()
+
+const moduleId = computed(() => props.module.id)
+const sensorData = computed(() => getModuleSensorData(moduleId.value))
+const deviceStatus = computed(() => getModuleDeviceStatus(moduleId.value))
 
 const optionsPanelOpen = ref(false)
 
-const isOnline = computed(() => props.deviceStatus?.system?.online !== false)
+const isOnline = computed(() => deviceStatus.value.system?.online !== false)
 const selectedGraphSensor = ref<string | null>(null)
 const selectedGraphActiveSensor = ref<string | null>(null) // Active sensor from card to pre-select
 const isToggling = ref(false)
 
-import { useChartSettings } from '~/features/modules/common/module-panel/composables'
-const { debouncedGraphDuration: graphDuration } = useChartSettings(computed(() => props.moduleId))
+const { debouncedGraphDuration: graphDuration } = useChartSettings(computed(() => moduleId.value))
 
 // Track active sensor per group type (updated by UnifiedSensorCard)
 const activeSensorByGroup = reactive<Record<string, string>>({})
@@ -140,8 +123,8 @@ const sensorGroupsDefinition = [
 // ============================================================================
 
 const getSensorData = (sensorName: string) => {
-  const status = props.deviceStatus?.sensors?.[sensorName] || {}
-  const config = props.deviceStatus?.sensorsConfig?.sensors?.[sensorName] || {}
+  const status = sensorData.value[sensorName] || {}
+  const config = deviceStatus.value?.sensorsConfig?.sensors?.[sensorName] || {}
   return {
     ...status,
     ...(config.model && { model: config.model }),
@@ -149,30 +132,19 @@ const getSensorData = (sensorName: string) => {
   }
 }
 
-/**
- * Flat map of sensor key -> latest history array.
- * Used by ModuleOptionsPanel for time counters.
- */
-// Pass through sensorData directly (now uses composite keys)
-// Pass through sensorData directly (now uses composite keys)
-const sensorHistoryMap = computed<Record<string, SensorDataPoint[]>>(() => {
-  // console.log('[DEBUG Panel] Sensor Data Keys:', Object.keys(props.sensorData))
-  return props.sensorData
-})
-
 // Build active groups from both sensorData and deviceStatus
 const activeGroups = computed(() => {
   return (
     sensorGroupsDefinition
       .map(group => {
         // Collect all composite keys from sensorData that match this group
-        const dataKeys = Object.keys(props.sensorData).filter(compositeKey => {
+        const dataKeys = Object.keys(sensorData.value).filter(compositeKey => {
           const type = getSensorTypeFromKey(compositeKey)
           return group.sensorTypes.includes(type)
         })
 
         // Also check deviceStatus.sensors for sensors that might not have data yet
-        const statusSensorTypes = Object.keys(props.deviceStatus?.sensors || {}).filter(
+        const statusSensorTypes = Object.keys(deviceStatus.value?.sensors || {}).filter(
           sensorType => group.sensorTypes.includes(sensorType)
         )
 
@@ -198,7 +170,7 @@ const activeGroups = computed(() => {
             let dataKey = compositeKey
             if (!hardwareId) {
               // This is a simple key from status, find matching composite key in sensorData
-              const matchingKey = Object.keys(props.sensorData).find(
+              const matchingKey = Object.keys(sensorData.value).find(
                 k => getSensorTypeFromKey(k) === sensorType
               )
               if (matchingKey) {
@@ -210,7 +182,7 @@ const activeGroups = computed(() => {
             const statusData = getSensorData(dataKey)
 
             // Get the last value from sensorData history (use dataKey for lookup)
-            const history = props.sensorData[dataKey] || []
+            const history = sensorData.value[dataKey] || []
             const lastValue =
               history.length > 0 ? history[history.length - 1]?.value : statusData.value
 
@@ -252,7 +224,7 @@ const activeGroups = computed(() => {
 
         // Determine initial active sensor from preferences
         const prefKey = `sensor-pref-${group.label}`
-        const preferredSensorKey = props.deviceStatus?.preferences?.[prefKey]
+        const preferredSensorKey = deviceStatus.value?.preferences?.[prefKey]
 
         const initialKey =
           preferredSensorKey && sensors.find(s => s.key === preferredSensorKey)
@@ -279,7 +251,7 @@ const activeGroups = computed(() => {
 
 const getSensorHistory = (key: string) => {
   // Try direct lookup first (works for composite keys like "dht22:temperature")
-  const directData = props.sensorData[key]
+  const directData = sensorData.value[key]
   if (directData && directData.length > 0) {
     return directData
   }
@@ -288,11 +260,11 @@ const getSensorHistory = (key: string) => {
   const sensorType = getSensorTypeFromKey(key)
   if (sensorType === key) {
     // This is a simple key, find matching composite key in sensorData
-    const matchingKey = Object.keys(props.sensorData).find(
+    const matchingKey = Object.keys(sensorData.value).find(
       k => getSensorTypeFromKey(k) === sensorType
     )
-    if (matchingKey && props.sensorData[matchingKey]?.length > 0) {
-      return props.sensorData[matchingKey]
+    if (matchingKey && sensorData.value[matchingKey]?.length > 0) {
+      return sensorData.value[matchingKey]
     }
   }
 
@@ -334,9 +306,6 @@ const isCardPanelOpen = (group: { sensors: { key: string }[] }) => {
   return group.sensors.some(s => getSensorTypeFromKey(s.key) === selectedGraphSensor.value)
 }
 
-/**
- * Find the group that contains the selected sensor for multi-sensor graph
- */
 const selectedGraphGroup = computed(() => {
   if (!selectedGraphSensor.value) return null
   return (
@@ -346,48 +315,25 @@ const selectedGraphGroup = computed(() => {
   )
 })
 
-/**
- * Get available sensors for the selected graph (from the group)
- */
 const selectedGraphAvailableSensors = computed(() => {
   return selectedGraphGroup.value?.sensors || []
 })
 
-/**
- * Get sensor history map for the selected graph group
- */
 const selectedGraphHistoryMap = computed<Record<string, SensorDataPoint[]>>(() => {
   if (!selectedGraphGroup.value) return {}
   return getHistoryMap(selectedGraphGroup.value)
 })
-
-// ============================================================================
-// Uptime Calculation
-// ============================================================================
-
-const calculatedUptime = computed(() => {
-  const bootedAt = props.deviceStatus?.system?.bootedAt
-  if (!bootedAt) return null
-
-  // Calculate uptime as seconds since boot
-  const bootTime = new Date(bootedAt).getTime()
-  const now = Date.now()
-  return Math.floor((now - bootTime) / 1000)
-})
 </script>
 
 <style scoped>
-/* Cards slide down first (fast) */
 .cards-transition {
   transition: transform 0.1s linear;
 }
 
-/* Options panel - simple linear transition */
 .options-panel-transition {
   transition: all 0.3s linear;
 }
 
-/* Panel slides: simple fade up */
 .slide-panel-enter-active {
   transition: all 0.4s ease-out;
 }

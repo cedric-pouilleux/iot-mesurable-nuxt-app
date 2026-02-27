@@ -197,7 +197,6 @@ import { useZones } from '~/features/zones/composables/useZones'
 
 const props = defineProps<{
   isOpen: boolean
-  currentDeviceId?: string
 }>()
 
 const emit = defineEmits<{

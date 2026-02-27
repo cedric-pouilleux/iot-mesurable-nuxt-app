@@ -1,16 +1,4 @@
 <template>
-  <!--
-    ModuleLayout.vue
-    =================
-    Reusable layout for module panels.
-    
-    Slots:
-    - loading: Custom loading content
-    - header-left: Title/icon on left side
-    - header-right: Action buttons on right side
-    - options: Collapsible options panel
-    - default: Main content area
-  -->
   <div class="mb-6">
     <!-- Loading state -->
     <div v-if="loading" class="text-center py-8 text-gray-400">

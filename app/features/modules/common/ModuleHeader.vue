@@ -65,7 +65,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { DeviceStatus } from '../../common/types'
+import type { DeviceStatus } from './types'
 import UIButton from '~/components/design-system/UIButton/UIButton.vue'
 
 const props = defineProps<{
@@ -76,7 +76,7 @@ const props = defineProps<{
   isOnline?: boolean
 }>()
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'toggle-options'): void
 }>()
 

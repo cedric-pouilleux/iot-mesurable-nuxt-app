@@ -1,17 +1,3 @@
-/**
- * Global types for the IoT Dashboard application
- * Only contains types that are truly global and not feature-specific
- */
-
-// ============================================================================
-// Module Types
-// ============================================================================
-
-export interface Module {
-  id: string
-  name: string
-}
-
 // ============================================================================
 // MQTT Types
 // ============================================================================
