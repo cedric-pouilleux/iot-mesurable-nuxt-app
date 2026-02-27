@@ -9,7 +9,7 @@
         <slot name="options" />
       </div>
     </div>
-    
+
     <!-- Content Box -->
     <div class="bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm p-3 h-full">
       <slot />

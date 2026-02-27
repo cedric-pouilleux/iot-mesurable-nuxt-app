@@ -1,6 +1,6 @@
 /**
  * Sensor & Hardware Configuration
- * 
+ *
  * Configuration statique pour les capteurs et hardware.
  * 12 clés canoniques : co2, eco2, temperature, humidity, pressure, voc, tvoc, co, pm1, pm25, pm4, pm10
  */
@@ -126,7 +126,11 @@ export function matchTopic(topic: string): string | undefined {
   const hardwareId = parts[parts.length - 2]
 
   // Skip system topics
-  if (['sensors', 'system', 'hardware', 'data', 'announce', 'status', 'config', 'log'].includes(hardwareId)) {
+  if (
+    ['sensors', 'system', 'hardware', 'data', 'announce', 'status', 'config', 'log'].includes(
+      hardwareId
+    )
+  ) {
     return undefined
   }
 

@@ -1,114 +1,127 @@
 <template>
-    <div v-if="selectedSensor" class="mt-5">
-      <SensorCardOpen
-        :title="dynamicTitle"
-        :color="dynamicColor"
-        @close="$emit('close')"
-      >
-        <template #header-extra>
-          <div class="flex items-center gap-3">
-            <!-- Sensor selector chips -->
-            <div v-if="enabledSensors && enabledSensors.length > 1" class="inline-flex items-stretch rounded bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700">
-              <template v-for="(sensor, index) in enabledSensors" :key="sensor.key">
-                <!-- Separator -->
-                <div 
-                  v-if="index > 0" 
+  <div v-if="selectedSensor" class="mt-5">
+    <SensorCardOpen :title="dynamicTitle" :color="dynamicColor" @close="$emit('close')">
+      <template #header-extra>
+        <div class="flex items-center gap-3">
+          <!-- Sensor selector chips -->
+          <div
+            v-if="enabledSensors && enabledSensors.length > 1"
+            class="inline-flex items-stretch rounded bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700"
+          >
+            <template v-for="(sensor, index) in enabledSensors" :key="sensor.key">
+              <!-- Separator -->
+              <div
+                v-if="index > 0"
+                class="w-[1px] h-3/5 bg-gray-200 dark:bg-gray-700 self-center"
+              ></div>
+
+              <button
+                class="px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer h-full flex items-center gap-1.5 select-none"
+                :class="
+                  selectedSensorKeys.has(sensor.key)
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                "
+                :title="getSensorDisplayLabel(sensor)"
+                @click="toggleSensor(sensor.key)"
+              >
+                <span
+                  class="w-2 h-2 rounded-full"
+                  :style="{ backgroundColor: getSensorShadeColor(index) }"
+                ></span>
+                {{ getSensorDisplayLabel(sensor) }}
+              </button>
+            </template>
+          </div>
+
+          <!-- Auto-zoom toggle -->
+          <button
+            class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded transition-colors cursor-pointer select-none border"
+            :class="
+              autoZoom
+                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700'
+                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+            "
+            title="Adapter l'échelle aux données"
+            @click="autoZoom = !autoZoom"
+          >
+            <Icon name="tabler:zoom-in-area" class="w-4 h-4" />
+            Auto-zoom
+          </button>
+
+          <!-- Bucket selector (server-side smoothing) -->
+          <UITooltip text="Lissage : intervalle de moyenne des points">
+            <div
+              class="inline-flex items-stretch rounded bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700"
+            >
+              <template v-for="(option, index) in filteredBucketOptions" :key="option.value">
+                <div
+                  v-if="index > 0"
                   class="w-[1px] h-3/5 bg-gray-200 dark:bg-gray-700 self-center"
                 ></div>
-                
                 <button
-                  @click="toggleSensor(sensor.key)"
-                  class="px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer h-full flex items-center gap-1.5 select-none"
-                  :class="selectedSensorKeys.has(sensor.key) 
-                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' 
-                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
-                  :title="getSensorDisplayLabel(sensor)"
+                  class="px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer h-full flex items-center select-none"
+                  :class="
+                    selectedBucket === option.value
+                      ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200'
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                  "
+                  :title="option.title"
+                  @click="selectBucket(option.value)"
                 >
-                  <span 
-                    class="w-2 h-2 rounded-full" 
-                    :style="{ backgroundColor: getSensorShadeColor(index) }"
-                  ></span>
-                  {{ getSensorDisplayLabel(sensor) }}
+                  {{ option.label }}
                 </button>
               </template>
             </div>
+          </UITooltip>
 
-            <!-- Auto-zoom toggle -->
-            <button
-              @click="autoZoom = !autoZoom"
-              class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded transition-colors cursor-pointer select-none border"
-              :class="autoZoom 
-                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700' 
-                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
-              title="Adapter l'échelle aux données"
+          <!-- Time range selector -->
+          <UITooltip text="Durée : période de temps affichée sur le graphique">
+            <div
+              class="inline-flex items-stretch rounded bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700"
             >
-              <Icon name="tabler:zoom-in-area" class="w-4 h-4" />
-              Auto-zoom
-            </button>
+              <template v-for="(option, index) in filteredDurationOptions" :key="option.value">
+                <div
+                  v-if="index > 0"
+                  class="w-[1px] h-3/5 bg-gray-200 dark:bg-gray-700 self-center"
+                ></div>
+                <button
+                  class="px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer h-full flex items-center select-none"
+                  :class="
+                    selectedDuration === option.value
+                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                  "
+                  :title="option.label"
+                  @click="selectedDuration = option.value"
+                >
+                  {{ option.label }}
+                </button>
+              </template>
+            </div>
+          </UITooltip>
+        </div>
+      </template>
 
-            <!-- Bucket selector (server-side smoothing) -->
-            <UITooltip text="Lissage : intervalle de moyenne des points">
-              <div 
-                class="inline-flex items-stretch rounded bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700"
-              >
-                <template v-for="(option, index) in filteredBucketOptions" :key="option.value">
-                  <div 
-                    v-if="index > 0" 
-                    class="w-[1px] h-3/5 bg-gray-200 dark:bg-gray-700 self-center"
-                  ></div>
-                  <button
-                    @click="selectBucket(option.value)"
-                    class="px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer h-full flex items-center select-none"
-                    :class="selectedBucket === option.value 
-                      ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200' 
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
-                    :title="option.title"
-                  >
-                    {{ option.label }}
-                  </button>
-                </template>
-              </div>
-            </UITooltip>
-
-            <!-- Time range selector -->
-            <UITooltip text="Durée : période de temps affichée sur le graphique">
-              <div 
-                class="inline-flex items-stretch rounded bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700"
-              >
-                <template v-for="(option, index) in filteredDurationOptions" :key="option.value">
-                  <div 
-                    v-if="index > 0" 
-                    class="w-[1px] h-3/5 bg-gray-200 dark:bg-gray-700 self-center"
-                  ></div>
-                  <button
-                    @click="selectedDuration = option.value"
-                    class="px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer h-full flex items-center select-none"
-                    :class="selectedDuration === option.value 
-                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' 
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'"
-                    :title="option.label"
-                  >
-                    {{ option.label }}
-                  </button>
-                </template>
-              </div>
-            </UITooltip>
+      <ClientOnly>
+        <Line
+          v-if="chartData"
+          :key="chartVersion"
+          :data="chartData"
+          :options="chartOptions"
+          :plugins="chartPlugins"
+        />
+        <template #fallback>
+          <div class="h-full flex items-center justify-center text-[10px] text-gray-300">
+            Chargement...
           </div>
         </template>
-        
-        <ClientOnly>
-          <Line v-if="chartData" :key="chartVersion" :data="chartData" :options="chartOptions" :plugins="chartPlugins" />
-          <template #fallback>
-            <div class="h-full flex items-center justify-center text-[10px] text-gray-300">
-              Chargement...
-            </div>
-          </template>
-        </ClientOnly>
-        <div v-if="!hasHistory" class="h-full flex items-center justify-center text-gray-400">
-          Pas assez de données pour afficher le graphique détaillé.
-        </div>
-      </SensorCardOpen>
-    </div>
+      </ClientOnly>
+      <div v-if="!hasHistory" class="h-full flex items-center justify-center text-gray-400">
+        Pas assez de données pour afficher le graphique détaillé.
+      </div>
+    </SensorCardOpen>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -211,20 +224,20 @@ const effectiveHistory = computed<SensorDataPoint[]>(() => {
       if (localHistoryMap.value[selectedKey]) {
         return localHistoryMap.value[selectedKey]
       }
-      
+
       const sensorType = selectedKey.includes(':') ? selectedKey.split(':')[1] : selectedKey
-      
+
       // 2. Direct match with sensor type (e.g. "co")
       if (localHistoryMap.value[sensorType]) {
         return localHistoryMap.value[sensorType]
       }
-      
+
       // 3. Key ends with :sensorType (e.g. key is "tpm200a:co" and sensorType is "co")
       // This is safer than .includes() which would match "co" in "co2"
-      const suffixMatch = Object.keys(localHistoryMap.value).find(k => 
-        k.endsWith(':' + sensorType) || k.toLowerCase() === sensorType.toLowerCase()
+      const suffixMatch = Object.keys(localHistoryMap.value).find(
+        k => k.endsWith(':' + sensorType) || k.toLowerCase() === sensorType.toLowerCase()
       )
-      
+
       if (suffixMatch) {
         return localHistoryMap.value[suffixMatch]
       }
@@ -244,7 +257,7 @@ const colorMode = useColorMode()
 const isDark = computed(() => colorMode.value === 'dark')
 
 // Filter out disabled sensors from the chip selector
-const enabledSensors = computed(() => 
+const enabledSensors = computed(() =>
   (props.availableSensors || []).filter(s => s.status !== 'disabled')
 )
 
@@ -282,12 +295,13 @@ const selectedDurationHours = computed(() => {
 // Filter data by selected duration
 const filterByDuration = (data: SensorDataPoint[]): SensorDataPoint[] => {
   if (!data || data.length === 0) return []
-  
+
   const now = Date.now()
-  const cutoffMs = now - (selectedDurationHours.value * 60 * 60 * 1000)
-  
+  const cutoffMs = now - selectedDurationHours.value * 60 * 60 * 1000
+
   return data.filter(point => {
-    const pointTime = point.time instanceof Date ? point.time.getTime() : new Date(point.time).getTime()
+    const pointTime =
+      point.time instanceof Date ? point.time.getTime() : new Date(point.time).getTime()
     return pointTime >= cutoffMs
   })
 }
@@ -316,14 +330,14 @@ const selectedBucket = ref('auto')
 // Fetch graph data based on current duration and bucket
 const fetchGraphData = async () => {
   isLoadingBucket.value = true
-  
+
   try {
     // Calculate days from selectedDurationHours
     const days = Math.ceil(selectedDurationHours.value / 24) || 1
-    
+
     // Load data with the new bucket directly
     const newData = await loadHistory(props.moduleId, days, selectedBucket.value)
-    
+
     if (newData) {
       localHistoryMap.value = newData
       chartVersion.value++ // Force chart re-render
@@ -338,7 +352,7 @@ const fetchGraphData = async () => {
 // Handle bucket selection - load data directly from API with selected bucket
 const selectBucket = async (bucket: string) => {
   if (bucket === selectedBucket.value) return
-  
+
   selectedBucket.value = bucket
   await fetchGraphData()
 }
@@ -352,13 +366,17 @@ watch(selectedDuration, () => {
 const chartVersion = ref(0)
 
 // Initialize with the active sensor from the card (or fallback to primary sensor)
-watch(() => [props.selectedSensor, props.initialActiveSensor] as const, ([selected, initial]) => {
-  // Prefer initialActiveSensor from the card, otherwise use selectedSensor
-  const sensorToSelect = initial || selected
-  if (sensorToSelect) {
-    selectedSensorKeys.value = new Set([sensorToSelect])
-  }
-}, { immediate: true })
+watch(
+  () => [props.selectedSensor, props.initialActiveSensor] as const,
+  ([selected, initial]) => {
+    // Prefer initialActiveSensor from the card, otherwise use selectedSensor
+    const sensorToSelect = initial || selected
+    if (sensorToSelect) {
+      selectedSensorKeys.value = new Set([sensorToSelect])
+    }
+  },
+  { immediate: true }
+)
 
 // Toggle sensor selection
 // VOC/TVOC are exclusive (can't combine different scales)
@@ -367,16 +385,16 @@ const exclusiveSensorGroups = [['voc', 'tvoc']]
 const toggleSensor = (sensorKey: string) => {
   const parts = sensorKey.split(':')
   const sensorType = parts.length > 1 ? parts[1].toLowerCase() : sensorKey.toLowerCase()
-  
+
   // Check if this sensor belongs to an exclusive group
   const exclusiveGroup = exclusiveSensorGroups.find(group => group.includes(sensorType))
-  
+
   if (exclusiveGroup) {
     // Exclusive selection: replace the current selection with this sensor
     selectedSensorKeys.value = new Set([sensorKey])
     return
   }
-  
+
   // Normal toggle behavior for other sensors
   const newSet = new Set(selectedSensorKeys.value)
   if (newSet.has(sensorKey)) {
@@ -397,17 +415,17 @@ const shadeMultipliers = [1.0, 0.7, 1.3, 0.5, 1.5] // base, darker, lighter, dar
 const getSensorShadeColor = (index: number): string => {
   const baseColor = props.sensorColor
   const multiplier = shadeMultipliers[index % shadeMultipliers.length]
-  
+
   // Parse hex color
   const r = parseInt(baseColor.slice(1, 3), 16)
   const g = parseInt(baseColor.slice(3, 5), 16)
   const b = parseInt(baseColor.slice(5, 7), 16)
-  
+
   // Apply shade multiplier (clamp to 0-255)
   const adjustedR = Math.min(255, Math.max(0, Math.round(r * multiplier)))
   const adjustedG = Math.min(255, Math.max(0, Math.round(g * multiplier)))
   const adjustedB = Math.min(255, Math.max(0, Math.round(b * multiplier)))
-  
+
   return `rgb(${adjustedR}, ${adjustedG}, ${adjustedB})`
 }
 
@@ -422,7 +440,7 @@ const getSensorDisplayLabel = (sensor: SensorItem): string => {
   // PM sensors: show the PM type (PM1.0, PM2.5, etc.) instead of the model
   const keyParts = sensor.key.split(':')
   const sensorType = keyParts.length > 1 ? keyParts[1] : sensor.key
-  
+
   if (/^pm\d/.test(sensorType)) {
     return sensor.label
   }
@@ -436,12 +454,12 @@ const { t } = useI18n()
 
 const dynamicTitle = computed(() => {
   const firstKey = Array.from(selectedSensorKeys.value)[0]
-  
+
   if (!firstKey) return props.sensorLabel
-  
+
   const parts = firstKey.split(':')
   const keyLower = parts.length > 1 ? parts[1].toLowerCase() : firstKey.toLowerCase()
-  
+
   return t(`sensors.${keyLower}`)
 })
 
@@ -450,15 +468,15 @@ const dynamicTitle = computed(() => {
 const dynamicColor = computed(() => {
   const firstKey = Array.from(selectedSensorKeys.value)[0]
   if (!firstKey) return props.sensorColor
-  
+
   // Only COV/TVOC can change color (exclusive selection)
   const parts = firstKey.split(':')
   const keyLower = parts.length > 1 ? parts[1].toLowerCase() : firstKey.toLowerCase()
-  
+
   if (keyLower === 'voc' || keyLower === 'tvoc') {
     return getSensorColorByKey(firstKey)
   }
-  
+
   // All other sensors keep the base group color
   return props.sensorColor
 })
@@ -468,12 +486,13 @@ const hasHistory = computed(() => props.history && props.history.length >= 2)
 // Collect all data values for dynamic range calculation (uses filtered data)
 const allDataValues = computed(() => {
   const values: number[] = []
-  
+
   // Check if we have multi-sensor data available (same logic as chartData)
-  const hasMultiSensorData = props.availableSensors && 
-    props.availableSensors.length > 1 && 
+  const hasMultiSensorData =
+    props.availableSensors &&
+    props.availableSensors.length > 1 &&
     Object.keys(effectiveHistoryMap.value || {}).length > 0
-  
+
   // Multi-sensor mode
   if (hasMultiSensorData) {
     for (const sensorKey of selectedSensorKeys.value) {
@@ -481,7 +500,9 @@ const allDataValues = computed(() => {
       const sensorHistory = filterByDuration(rawHistory || [])
       if (sensorHistory.length > 0) {
         const ratio = getNormalizationRatio(sensorKey)
-        values.push(...sensorHistory.map(d => d.value / ratio).filter(v => v !== null && v !== undefined))
+        values.push(
+          ...sensorHistory.map(d => d.value / ratio).filter(v => v !== null && v !== undefined)
+        )
       }
     }
   } else {
@@ -489,7 +510,7 @@ const allDataValues = computed(() => {
     const filteredHistory = filterByDuration(effectiveHistory.value)
     values.push(...filteredHistory.map(d => d.value).filter(v => v !== null && v !== undefined))
   }
-  
+
   return values
 })
 
@@ -497,7 +518,11 @@ const graphMinMax = computed(() => {
   // Check if we should allow negative values (only for temperature-like sensors)
   const isNegativeAllowed = (() => {
     // Multi-sensor check
-    if (props.availableSensors && props.availableSensors.length > 1 && selectedSensorKeys.value.size > 0) {
+    if (
+      props.availableSensors &&
+      props.availableSensors.length > 1 &&
+      selectedSensorKeys.value.size > 0
+    ) {
       for (const key of selectedSensorKeys.value) {
         if (key.toLowerCase().includes('temp')) return true
       }
@@ -505,21 +530,23 @@ const graphMinMax = computed(() => {
     }
     // Single sensor check
     const currentSensor = props.selectedSensor || props.initialActiveSensor || ''
-    return currentSensor.toLowerCase().includes('temp') || currentSensor.toLowerCase().includes('rssi')
+    return (
+      currentSensor.toLowerCase().includes('temp') || currentSensor.toLowerCase().includes('rssi')
+    )
   })()
 
   // If auto-zoom is enabled, calculate dynamic range based on actual data
   if (autoZoom.value) {
     const values = allDataValues.value
     if (values.length === 0) return { min: 0, max: 100 }
-    
+
     const dataMin = Math.min(...values)
     const dataMax = Math.max(...values)
     const range = dataMax - dataMin || 1
-    
+
     // Add 5% padding on each side for better visualization
     const padding = range * 0.05
-    
+
     let min = Math.floor(dataMin - padding)
     // Clamp to 0 if negative values are not allowed (e.g. CO, VOC, PM)
     if (!isNegativeAllowed && min < 0) {
@@ -531,12 +558,12 @@ const graphMinMax = computed(() => {
       max: Math.ceil(dataMax + padding),
     }
   }
-  
+
   // Fixed range mode: use the first selected sensor to determine the range
   const firstKey = Array.from(selectedSensorKeys.value)[0]
   const sensorType = (firstKey || props.selectedSensor)?.toLowerCase() || ''
   const range = getSensorRange(sensorType)
-  
+
   if (range) {
     return range
   }
@@ -579,54 +606,70 @@ const chartData = computed<ChartData<'line'> | null>(() => {
   }
 
   // Check if we have multi-sensor data available
-  const hasMultiSensorData = props.availableSensors && 
-    props.availableSensors.length > 1 && 
+  const hasMultiSensorData =
+    props.availableSensors &&
+    props.availableSensors.length > 1 &&
     Object.keys(effectiveHistoryMap.value || {}).length > 0
 
   if (hasMultiSensorData) {
     // Multi-sensor mode: create one dataset per selected sensor
     const datasets = []
-    
+
     for (const sensorKey of selectedSensorKeys.value) {
       // Filter by selected duration
       const rawHistory = effectiveHistoryMap.value?.[sensorKey]
       const sensorHistory = filterByDuration(rawHistory || [])
       if (sensorHistory.length < 2) continue
-      
+
       const sensor = props.availableSensors?.find(s => s.key === sensorKey)
       const color = getSensorColorByKey(sensorKey)
-      
+
       // Get normalization ratio for this sensor (e.g., TVOC / 100)
       const ratio = getNormalizationRatio(sensorKey)
-      
+
       const sortedData = [...sensorHistory].sort((a, b) => {
         const timeA = a.time instanceof Date ? a.time.getTime() : new Date(a.time).getTime()
         const timeB = b.time instanceof Date ? b.time.getTime() : new Date(b.time).getTime()
         return timeA - timeB
       })
-      
+
       // Apply normalization ratio to values (smoothing is now done server-side)
-      const normalizedData = sortedData.map(m => ({ 
-        x: m.time as unknown as number, 
-        y: m.value / ratio 
+      const normalizedData = sortedData.map(m => ({
+        x: m.time as unknown as number,
+        y: m.value / ratio,
       }))
-      
+
       // Calculate gaps for this specific sensor's data
       const timeGaps: number[] = []
       for (let i = 1; i < sortedData.length; i++) {
-        const t1 = sortedData[i-1].time instanceof Date ? sortedData[i-1].time.getTime() : new Date(sortedData[i-1].time).getTime()
-        const t2 = sortedData[i].time instanceof Date ? sortedData[i].time.getTime() : new Date(sortedData[i].time).getTime()
+        const t1 =
+          sortedData[i - 1].time instanceof Date
+            ? sortedData[i - 1].time.getTime()
+            : new Date(sortedData[i - 1].time).getTime()
+        const t2 =
+          sortedData[i].time instanceof Date
+            ? sortedData[i].time.getTime()
+            : new Date(sortedData[i].time).getTime()
         timeGaps.push(t2 - t1)
       }
-      
-      const medianGap = timeGaps.length > 0 ? timeGaps.sort((a, b) => a - b)[Math.floor(timeGaps.length / 2)] : 60000
+
+      const medianGap =
+        timeGaps.length > 0
+          ? timeGaps.sort((a, b) => a - b)[Math.floor(timeGaps.length / 2)]
+          : 60000
       const gapThreshold = Math.max(medianGap * 5, 10 * 60 * 1000) // 10 min minimum
 
       const gapIndices = new Set<number>()
       // Calculate gaps for this specific sensor's data
       for (let i = 1; i < sortedData.length; i++) {
-        const t1 = sortedData[i-1].time instanceof Date ? sortedData[i-1].time.getTime() : new Date(sortedData[i-1].time).getTime()
-        const t2 = sortedData[i].time instanceof Date ? sortedData[i].time.getTime() : new Date(sortedData[i].time).getTime()
+        const t1 =
+          sortedData[i - 1].time instanceof Date
+            ? sortedData[i - 1].time.getTime()
+            : new Date(sortedData[i - 1].time).getTime()
+        const t2 =
+          sortedData[i].time instanceof Date
+            ? sortedData[i].time.getTime()
+            : new Date(sortedData[i].time).getTime()
         if (t2 - t1 > gapThreshold) {
           gapIndices.add(i - 1)
         }
@@ -648,12 +691,14 @@ const chartData = computed<ChartData<'line'> | null>(() => {
         hitRadius: 8,
         spanGaps: true,
         segment: {
-          borderDash: (ctx: { p0DataIndex: number }) => gapIndices.has(ctx.p0DataIndex) ? [6, 6] : undefined,
-          borderColor: (ctx: { p0DataIndex: number }) => gapIndices.has(ctx.p0DataIndex) ? hexToRgba(color, 0.4) : undefined,
+          borderDash: (ctx: { p0DataIndex: number }) =>
+            gapIndices.has(ctx.p0DataIndex) ? [6, 6] : undefined,
+          borderColor: (ctx: { p0DataIndex: number }) =>
+            gapIndices.has(ctx.p0DataIndex) ? hexToRgba(color, 0.4) : undefined,
         },
       })
     }
-    
+
     if (datasets.length === 0) return null
     return { datasets }
   }
@@ -674,20 +719,33 @@ const chartData = computed<ChartData<'line'> | null>(() => {
   // Calculate average time gap to detect significant gaps (smoothing is now done server-side)
   const timeGaps: number[] = []
   for (let i = 1; i < sortedData.length; i++) {
-    const t1 = sortedData[i-1].time instanceof Date ? sortedData[i-1].time.getTime() : new Date(sortedData[i-1].time).getTime()
-    const t2 = sortedData[i].time instanceof Date ? sortedData[i].time.getTime() : new Date(sortedData[i].time).getTime()
+    const t1 =
+      sortedData[i - 1].time instanceof Date
+        ? sortedData[i - 1].time.getTime()
+        : new Date(sortedData[i - 1].time).getTime()
+    const t2 =
+      sortedData[i].time instanceof Date
+        ? sortedData[i].time.getTime()
+        : new Date(sortedData[i].time).getTime()
     timeGaps.push(t2 - t1)
   }
-  
+
   // Gap threshold: 5x the median gap (or 10 min minimum)
-  const medianGap = timeGaps.length > 0 ? timeGaps.sort((a, b) => a - b)[Math.floor(timeGaps.length / 2)] : 60000
+  const medianGap =
+    timeGaps.length > 0 ? timeGaps.sort((a, b) => a - b)[Math.floor(timeGaps.length / 2)] : 60000
   const gapThreshold = Math.max(medianGap * 5, 10 * 60 * 1000) // 10 min minimum
 
   // Pre-compute gap indices for segment styling
   const gapIndices = new Set<number>()
   for (let i = 1; i < sortedData.length; i++) {
-    const t1 = sortedData[i-1].time instanceof Date ? sortedData[i-1].time.getTime() : new Date(sortedData[i-1].time).getTime()
-    const t2 = sortedData[i].time instanceof Date ? sortedData[i].time.getTime() : new Date(sortedData[i].time).getTime()
+    const t1 =
+      sortedData[i - 1].time instanceof Date
+        ? sortedData[i - 1].time.getTime()
+        : new Date(sortedData[i - 1].time).getTime()
+    const t2 =
+      sortedData[i].time instanceof Date
+        ? sortedData[i].time.getTime()
+        : new Date(sortedData[i].time).getTime()
     if (t2 - t1 > gapThreshold) {
       gapIndices.add(i - 1)
     }
@@ -711,8 +769,10 @@ const chartData = computed<ChartData<'line'> | null>(() => {
         hitRadius: 10,
         spanGaps: true,
         segment: {
-          borderDash: (ctx: { p0DataIndex: number }) => gapIndices.has(ctx.p0DataIndex) ? [6, 6] : undefined,
-          borderColor: (ctx: { p0DataIndex: number }) => gapIndices.has(ctx.p0DataIndex) ? hexToRgba(props.sensorColor, 0.4) : undefined,
+          borderDash: (ctx: { p0DataIndex: number }) =>
+            gapIndices.has(ctx.p0DataIndex) ? [6, 6] : undefined,
+          borderColor: (ctx: { p0DataIndex: number }) =>
+            gapIndices.has(ctx.p0DataIndex) ? hexToRgba(props.sensorColor, 0.4) : undefined,
         },
       },
     ],
@@ -737,8 +797,8 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
           minute: 'dd/MM HH:mm',
           hour: 'dd/MM HH:mm',
           day: 'dd/MM',
-          month: 'MM/yyyy'
-        }
+          month: 'MM/yyyy',
+        },
       },
       border: { display: false },
       grid: { color: isDark.value ? 'rgba(75, 85, 99, 0.3)' : '#f3f4f6', drawBorder: false },
@@ -778,7 +838,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
 
         const sensorKey = Array.from(selectedSensorKeys.value)[0]
         const thresholds = getThresholdDefinition(sensorKey)
-        
+
         if (!thresholds) return {}
 
         return {
@@ -789,7 +849,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
             borderColor: 'rgba(245, 158, 11, 0.6)',
             borderWidth: 1,
             borderDash: [4, 4],
-            label: { display: false }
+            label: { display: false },
           },
           poorLine: {
             type: 'line',
@@ -798,7 +858,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
             borderColor: 'rgba(249, 115, 22, 0.6)',
             borderWidth: 1,
             borderDash: [4, 4],
-            label: { display: false }
+            label: { display: false },
           },
           hazardousLine: {
             type: 'line',
@@ -807,10 +867,10 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
             borderColor: 'rgba(239, 68, 68, 0.6)',
             borderWidth: 1,
             borderDash: [4, 4],
-            label: { display: false }
-          }
+            label: { display: false },
+          },
         }
-      })()
+      })(),
     },
     tooltip: {
       enabled: true,
@@ -860,14 +920,20 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
 </script>
 
 <style scoped>
-
-
 /* Shadow separator top (inverted - shadow goes down) */
 .shadow-separator-top {
-  background: radial-gradient(ellipse 70% 100% at center top, rgba(0, 0, 0, 0.08) 0%, transparent 100%);
+  background: radial-gradient(
+    ellipse 70% 100% at center top,
+    rgba(0, 0, 0, 0.08) 0%,
+    transparent 100%
+  );
 }
 
 :global(.dark) .shadow-separator-top {
-  background: radial-gradient(ellipse 70% 100% at center top, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
+  background: radial-gradient(
+    ellipse 70% 100% at center top,
+    rgba(0, 0, 0, 0.9) 0%,
+    transparent 100%
+  );
 }
 </style>

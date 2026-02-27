@@ -1,6 +1,6 @@
 /**
  * useCardColors
- * 
+ *
  * Centralized color logic for sensor card components.
  * Maps color names to Tailwind classes for consistent theming.
  */
@@ -14,22 +14,22 @@ interface CardColorClasses {
   darkerColorClass: ComputedRef<string>
   lightValueColorClass: ComputedRef<string>
   darkerValueColorClass: ComputedRef<string>
-  
+
   // Background colors
   themeBgClass: ComputedRef<string>
   openBgClass: ComputedRef<string>
   activeItemBgClass: ComputedRef<string>
-  
+
   // Hover colors
   hoverBgClass: ComputedRef<string>
   ctaHoverBgClass: ComputedRef<string>
-  
+
   // Effects
   hoverShadowColor: ComputedRef<string>
 }
 
 export function useCardColors(color: ComputedRef<string> | string): CardColorClasses {
-  const colorValue = computed(() => typeof color === 'string' ? color : color.value)
+  const colorValue = computed(() => (typeof color === 'string' ? color : color.value))
 
   // Main value text color
   const valueColorClass = computed(() => {

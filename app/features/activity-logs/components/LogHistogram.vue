@@ -2,17 +2,17 @@
   <div class="">
     <div class="grid grid-cols-1 grid-rows-[100px_24px] gap-y-1">
       <!-- Chart Area -->
-      <div 
-        class="relative cursor-crosshair" 
+      <div
         ref="chartRef"
+        class="relative cursor-crosshair"
         @mousedown="startDrag"
         @mousemove="onDrag"
         @mouseup="endDrag"
         @mouseleave="endDrag"
       >
-        <svg 
-          width="100%" 
-          height="100%" 
+        <svg
+          width="100%"
+          height="100%"
           preserveAspectRatio="none"
           :viewBox="`0 0 ${bucketCount} 100`"
           class="block"
@@ -54,25 +54,31 @@
         </svg>
 
         <!-- Tooltip -->
-        <div 
-          v-if="tooltip.show" 
-          class="absolute bg-gray-800 dark:bg-gray-900 text-white p-2 rounded-md text-[11px] pointer-events-none z-50 min-w-[120px] shadow-lg border border-gray-700" 
+        <div
+          v-if="tooltip.show"
+          class="absolute bg-gray-800 dark:bg-gray-900 text-white p-2 rounded-md text-[11px] pointer-events-none z-50 min-w-[120px] shadow-lg border border-gray-700"
           :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }"
         >
           <div class="font-medium mb-1 pb-1 border-b border-gray-700">{{ tooltip.time }}</div>
-          <div v-for="cat in tooltip.categories" :key="cat.name" class="flex items-center gap-1.5 my-0.5">
+          <div
+            v-for="cat in tooltip.categories"
+            :key="cat.name"
+            class="flex items-center gap-1.5 my-0.5"
+          >
             <span class="w-2 h-2 rounded-full" :style="{ background: cat.color }"></span>
             {{ cat.name }}: {{ cat.count }}
           </div>
-          <div class="mt-1 pt-1 border-t border-gray-700 font-medium">Total: {{ formatNumber(tooltip.total) }}</div>
+          <div class="mt-1 pt-1 border-t border-gray-700 font-medium">
+            Total: {{ formatNumber(tooltip.total) }}
+          </div>
         </div>
       </div>
 
       <!-- X Axis -->
       <div class="relative h-5 text-[10px] text-gray-400 dark:text-gray-500">
-        <span 
-          v-for="label in timeLabels" 
-          :key="label.text" 
+        <span
+          v-for="label in timeLabels"
+          :key="label.text"
           class="absolute -translate-x-1/2 whitespace-nowrap"
           :style="{ left: label.position + '%' }"
         >
@@ -82,9 +88,20 @@
     </div>
 
     <!-- Selection info bar -->
-    <div v-if="selection" class="flex items-center justify-between px-4 py-1.5 bg-blue-50 dark:bg-blue-900/20 border-t border-blue-100 dark:border-blue-900/30 text-xs text-blue-800 dark:text-blue-200">
-      <span>Sélection: {{ formatDateTime(selection.start) }} → {{ formatDateTime(selection.end) }}</span>
-      <button @click="clearSelection" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors">✕ Effacer</button>
+    <div
+      v-if="selection"
+      class="flex items-center justify-between px-4 py-1.5 bg-blue-50 dark:bg-blue-900/20 border-t border-blue-100 dark:border-blue-900/30 text-xs text-blue-800 dark:text-blue-200"
+    >
+      <span
+        >Sélection: {{ formatDateTime(selection.start) }} →
+        {{ formatDateTime(selection.end) }}</span
+      >
+      <button
+        class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+        @click="clearSelection"
+      >
+        ✕ Effacer
+      </button>
     </div>
   </div>
 </template>
@@ -104,20 +121,20 @@ const emit = defineEmits<{
 
 // Category colors - must match logs.vue
 const CATEGORY_COLORS: Record<string, string> = {
-  'HARDWARE': '#6366f1', // Indigo-500
-  'Hardware': '#6366f1', // Case variant
-  'hardware': '#6366f1', // Case variant
-  'ESP32': '#6366f1',    // Legacy
-  'MQTT': '#f97316',     // Orange-500
-  'DB': '#06b6d4',       // Cyan-500
-  'API': '#ec4899',      // Pink-500
-  'SYSTEM': '#94a3b8',   // Slate-400 (Much brighter than 600)
-  'WEBSOCKET': '#fb923c',// Orange-400
+  HARDWARE: '#6366f1', // Indigo-500
+  Hardware: '#6366f1', // Case variant
+  hardware: '#6366f1', // Case variant
+  ESP32: '#6366f1', // Legacy
+  MQTT: '#f97316', // Orange-500
+  DB: '#06b6d4', // Cyan-500
+  API: '#ec4899', // Pink-500
+  SYSTEM: '#94a3b8', // Slate-400 (Much brighter than 600)
+  WEBSOCKET: '#fb923c', // Orange-400
 }
 
-interface RawBucket { 
+interface RawBucket {
   slot: string
-  counts: Record<string, number> 
+  counts: Record<string, number>
 }
 
 const rawData = ref<RawBucket[]>([])
@@ -136,7 +153,7 @@ const tooltip = reactive({
   y: 0,
   time: '',
   total: 0,
-  categories: [] as { name: string; color: string; count: number }[]
+  categories: [] as { name: string; color: string; count: number }[],
 })
 
 // Computed
@@ -144,9 +161,7 @@ const bucketCount = computed(() => rawData.value.length || 1)
 
 const maxCount = computed(() => {
   if (!rawData.value.length) return 100
-  return Math.max(...rawData.value.map(b => 
-    Object.values(b.counts).reduce((a, c) => a + c, 0)
-  ), 1)
+  return Math.max(...rawData.value.map(b => Object.values(b.counts).reduce((a, c) => a + c, 0)), 1)
 })
 
 // Methods
@@ -164,78 +179,80 @@ const layers = computed(() => {
 
   const categories = getCategoryOrder()
   const result: { color: string; d: string; name: string }[] = []
-  
+
   // Pre-calculate heights for all slots
   // stackTops[slotIndex][categoryIndex] = y positions
   const stackCurrent = new Array(rawData.value.length).fill(0)
-  
+
   categories.forEach(cat => {
     let pathD = ''
-    
+
     // Forward pass (Top line)
     rawData.value.forEach((bucket, i) => {
       const count = bucket.counts[cat] || 0
       const height = (count / maxCount.value) * 95
       const yBottom = stackCurrent[i]
       const yTop = yBottom + height
-      
+
       const yPos = 100 - yTop
-      
+
       if (i === 0) {
         pathD += `M ${i} ${yPos}`
       } else {
         // Step Line: Horizontal then Vertical
         // L {i} {prevY} -> L {i} {currY}
         // stackCurrent[i-1] ALREADY includes the height for this category from the previous iteration
-        const prevY = 100 - stackCurrent[i-1]
-        
+        const prevY = 100 - stackCurrent[i - 1]
+
         // Corner logic for perfect steps
         pathD += ` L ${i} ${prevY} L ${i} ${yPos}`
       }
-      
+
       // Update stack for this slot
       stackCurrent[i] += height
-      
+
       // Last point extension
       if (i === rawData.value.length - 1) {
         pathD += ` L ${i + 1} ${yPos}`
       }
     })
-    
+
     // Backward pass (Bottom line)
     // We need the "bottom" which is the "top" of the previous layer
     // We must re-calculate or store?
     // Let's re-calculate to be safe and simple (cpu is cheap)
     // Actually we stored the top in 'stackCurrent' AFTER adding.
     // So the bottom for this category was (stackCurrent - height).
-    
+
     for (let i = rawData.value.length - 1; i >= 0; i--) {
-      const count = bucketCount.value > 0 ? (rawData.value[i].counts[cat] || 0) : 0
+      const count = bucketCount.value > 0 ? rawData.value[i].counts[cat] || 0 : 0
       const height = (count / maxCount.value) * 95
-      const yTop = stackCurrent[i] 
+      const yTop = stackCurrent[i]
       const yBottom = yTop - height
-      
+
       const yPos = 100 - yBottom
-      
+
       if (i === rawData.value.length - 1) {
         pathD += ` L ${i + 1} ${yPos}`
         pathD += ` L ${i} ${yPos}`
       } else {
-         const prevY = 100 - (stackCurrent[i+1] - ((rawData.value[i+1].counts[cat] || 0) / maxCount.value * 95))
-         pathD += ` L ${i + 1} ${prevY} L ${i + 1} ${yPos} L ${i} ${yPos}`
+        const prevY =
+          100 -
+          (stackCurrent[i + 1] - ((rawData.value[i + 1].counts[cat] || 0) / maxCount.value) * 95)
+        pathD += ` L ${i + 1} ${prevY} L ${i + 1} ${yPos} L ${i} ${yPos}`
       }
     }
-    
+
     if (pathD) {
-       pathD += ' Z'
-       result.push({
-         name: cat,
-         color: CATEGORY_COLORS[cat] || '#6b7280',
-         d: pathD
-       })
+      pathD += ' Z'
+      result.push({
+        name: cat,
+        color: CATEGORY_COLORS[cat] || '#6b7280',
+        d: pathD,
+      })
     }
   })
-  
+
   return result
 })
 
@@ -246,33 +263,34 @@ const buckets = computed(() => {
       slot: bucket.slot,
       total,
       segments: [], // Not used for rendering anymore
-      counts: bucket.counts
+      counts: bucket.counts,
     }
   })
 })
 
 const selectionRange = computed(() => {
   if (!props.selection || !rawData.value.length) return null
-  
+
   const selStart = new Date(props.selection.start).getTime()
   const selEnd = new Date(props.selection.end).getTime()
-  
+
   // Find bucket indices by matching timestamps
   // A bucket at index i covers the time from slot[i] to slot[i+1] (or slot[i] + bucketDuration for the last one)
   let startX = 0
   let endX = bucketCount.value
-  
+
   // Get bucket duration
   let bucketDuration = 3600000 // Default 1 hour
   if (rawData.value.length > 1) {
-    bucketDuration = new Date(rawData.value[1].slot).getTime() - new Date(rawData.value[0].slot).getTime()
+    bucketDuration =
+      new Date(rawData.value[1].slot).getTime() - new Date(rawData.value[0].slot).getTime()
   }
-  
+
   // Find startX: first bucket whose end time is > selStart
   for (let i = 0; i < rawData.value.length; i++) {
     const bucketStart = new Date(rawData.value[i].slot).getTime()
     const bucketEnd = bucketStart + bucketDuration
-    
+
     if (selStart < bucketEnd) {
       // Selection starts within or before this bucket
       const fraction = Math.max(0, (selStart - bucketStart) / bucketDuration)
@@ -280,12 +298,12 @@ const selectionRange = computed(() => {
       break
     }
   }
-  
+
   // Find endX: last bucket whose start time is < selEnd
   for (let i = rawData.value.length - 1; i >= 0; i--) {
     const bucketStart = new Date(rawData.value[i].slot).getTime()
     const bucketEnd = bucketStart + bucketDuration
-    
+
     if (selEnd > bucketStart) {
       // Selection ends within or after this bucket
       const fraction = Math.min(1, (selEnd - bucketStart) / bucketDuration)
@@ -293,35 +311,35 @@ const selectionRange = computed(() => {
       break
     }
   }
-  
-  return { 
-    startX: Math.max(0, startX), 
-    endX: Math.min(bucketCount.value, endX) 
+
+  return {
+    startX: Math.max(0, startX),
+    endX: Math.min(bucketCount.value, endX),
   }
 })
 
 const timeLabels = computed(() => {
   if (!rawData.value.length) return []
-  
+
   const count = rawData.value.length
   const labels: { text: string; position: number }[] = []
   const numLabels = Math.min(8, count)
-  
+
   for (let i = 0; i < numLabels; i++) {
     const idx = Math.floor((i / (numLabels - 1)) * (count - 1))
     const d = new Date(rawData.value[idx].slot)
-    
+
     // Check if range is > 24h
     const rangeMs = new Date(props.range.end).getTime() - new Date(props.range.start).getTime()
     const isMultiDay = rangeMs > 24 * 60 * 60 * 1000
-    
-    const text = isMultiDay 
+
+    const text = isMultiDay
       ? d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
       : d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-    
+
     labels.push({ text, position: (idx / (count - 1)) * 100 })
   }
-  
+
   return labels
 })
 
@@ -336,7 +354,7 @@ const formatDateTime = (iso: string) => {
     day: '2-digit',
     month: '2-digit',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   })
 }
 
@@ -349,14 +367,14 @@ const getMouseX = (e: MouseEvent): number => {
 
 const xToTime = (x: number): string => {
   if (!rawData.value.length) return new Date().toISOString()
-  
+
   // Clamp x to valid range
   const clampedX = Math.max(0, Math.min(x, bucketCount.value))
-  
+
   // Get bucket index
   const bucketIndex = Math.floor(clampedX)
   const fraction = clampedX - bucketIndex
-  
+
   // Handle edge cases
   if (bucketIndex >= rawData.value.length - 1) {
     // At or past the last bucket - return end of last bucket
@@ -369,12 +387,12 @@ const xToTime = (x: number): string => {
     }
     return new Date(lastSlot).toISOString()
   }
-  
+
   // Interpolate between current and next bucket
   const currentSlot = new Date(rawData.value[bucketIndex].slot).getTime()
   const nextSlot = new Date(rawData.value[bucketIndex + 1].slot).getTime()
   const time = currentSlot + (nextSlot - currentSlot) * fraction
-  
+
   return new Date(time).toISOString()
 }
 
@@ -386,12 +404,12 @@ const startDrag = (e: MouseEvent) => {
 
 const onDrag = (e: MouseEvent) => {
   if (!chartRef.value) return
-  
+
   // Update tooltip
   const rect = chartRef.value.getBoundingClientRect()
   const x = e.clientX - rect.left
   const bucketIndex = Math.floor((x / rect.width) * bucketCount.value)
-  
+
   if (bucketIndex >= 0 && bucketIndex < rawData.value.length) {
     const bucket = rawData.value[bucketIndex]
     tooltip.show = true
@@ -404,10 +422,10 @@ const onDrag = (e: MouseEvent) => {
       .map(([name, count]) => ({
         name,
         color: CATEGORY_COLORS[name] || '#6b7280',
-        count
+        count,
       }))
   }
-  
+
   // Update drag
   if (isDragging.value) {
     dragEnd.value = getMouseX(e)
@@ -416,17 +434,17 @@ const onDrag = (e: MouseEvent) => {
 
 const endDrag = (e: MouseEvent) => {
   tooltip.show = false
-  
+
   if (!isDragging.value || dragStart.value === null || dragEnd.value === null) {
     isDragging.value = false
     return
   }
-  
+
   isDragging.value = false
-  
+
   const start = Math.min(dragStart.value, dragEnd.value)
   const end = Math.max(dragStart.value, dragEnd.value)
-  
+
   // Minimum drag threshold (at least 0.5 bucket width)
   if (end - start < 0.5) {
     // Click = clear selection
@@ -437,7 +455,7 @@ const endDrag = (e: MouseEvent) => {
     const endTime = xToTime(end)
     emit('update:selection', { start: startTime, end: endTime })
   }
-  
+
   dragStart.value = null
   dragEnd.value = null
 }
@@ -448,21 +466,27 @@ const clearSelection = () => {
 
 const fetchHistogram = async () => {
   if (!props.range.start || !props.range.end) return
-  
+
   try {
     const params = new URLSearchParams({
       startDate: props.range.start,
       endDate: props.range.end,
     })
-    
+
     if (props.filters.category) {
-      props.filters.category.split(',').filter(Boolean).forEach(cat => params.append('category', cat))
+      props.filters.category
+        .split(',')
+        .filter(Boolean)
+        .forEach(cat => params.append('category', cat))
     }
     if (props.filters.level) {
-      props.filters.level.split(',').filter(Boolean).forEach(lvl => params.append('level', lvl))
+      props.filters.level
+        .split(',')
+        .filter(Boolean)
+        .forEach(lvl => params.append('level', lvl))
     }
     if (props.filters.search) params.append('search', props.filters.search)
-    
+
     const data = await $fetch<RawBucket[]>(`/api/logs/histogram?${params}`)
     rawData.value = data
   } catch (e) {
@@ -473,18 +497,24 @@ const fetchHistogram = async () => {
 // Split watchers to debounce search
 let searchTimeout: NodeJS.Timeout | null = null
 
-watch(() => props.filters.search, () => {
-  if (searchTimeout) clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
-    fetchHistogram()
-  }, 500)
-})
+watch(
+  () => props.filters.search,
+  () => {
+    if (searchTimeout) clearTimeout(searchTimeout)
+    searchTimeout = setTimeout(() => {
+      fetchHistogram()
+    }, 500)
+  }
+)
 
-watch(() => [props.range, props.filters.category, props.filters.level], fetchHistogram, { deep: true, immediate: true })
+watch(() => [props.range, props.filters.category, props.filters.level], fetchHistogram, {
+  deep: true,
+  immediate: true,
+})
 </script>
 
 <style scoped>
-.histogram-wrapper { 
+.histogram-wrapper {
   background: white;
   border-bottom: 1px solid #e5e7eb;
 }
@@ -543,7 +573,7 @@ watch(() => [props.range, props.filters.category, props.filters.level], fetchHis
   pointer-events: none;
   z-index: 50;
   min-width: 120px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .tooltip-time {

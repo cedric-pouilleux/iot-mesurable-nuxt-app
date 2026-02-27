@@ -8,47 +8,37 @@
     REFACTORED: Extracted logic into composables and sub-components for better maintainability.
   -->
   <div class="flex items-center gap-2">
-    
     <!-- Status Indicator -->
-    <SensorStatusIndicator 
-      :status="computedStatus"
-      :isEnabled="isEnabled"
-    />
-    
+    <SensorStatusIndicator :status="computedStatus" :is-enabled="isEnabled" />
+
     <!-- Hardware Name -->
-    <span 
-      class="text-xs font-semibold flex-shrink-0" 
+    <span
+      class="text-xs font-semibold flex-shrink-0"
       :class="isEnabled ? statusTextClass : 'text-gray-400 dark:text-gray-500'"
     >
       {{ hardware.name }}
     </span>
-    
+
     <!-- Measurement badges (only when enabled) -->
-    <SensorMeasurementBadges 
-      :measurements="hardware.measurements"
-      :isEnabled="isEnabled"
-    />
-    
+    <SensorMeasurementBadges :measurements="hardware.measurements" :is-enabled="isEnabled" />
+
     <!-- Spacer -->
     <div class="flex-1"></div>
-    
+
     <!-- Time Counter (only when enabled) -->
-    <span 
-      v-if="isEnabled"
-      class="text-[10px] text-gray-400 dark:text-gray-300 flex-shrink-0"
-    >
+    <span v-if="isEnabled" class="text-[10px] text-gray-400 dark:text-gray-300 flex-shrink-0">
       {{ timeAgo || '--' }}
     </span>
-    
+
     <!-- Action Buttons (stop/play/reset) -->
     <SensorActionButtons
-      :isEnabled="isEnabled"
+      :is-enabled="isEnabled"
       :toggling="toggling"
       :resetting="resetting"
       @toggle="handleToggle"
       @reset="handleReset"
     />
-    
+
     <!-- Interval Control (disabled when stopped) -->
     <UITooltip text="Intervalle de lecture (sec)">
       <UISlider
@@ -67,7 +57,7 @@
 <script setup lang="ts">
 /**
  * HardwareSensorRow - Compact single-line row for hardware sensor
- * 
+ *
  * REFACTORED to use:
  * - useHardwareSensorHistory: for data resolution
  * - useHardwareSensorActions: for API actions
@@ -104,7 +94,7 @@ interface HardwareData {
   measurements: Measurement[]
   interval: number
   status: 'ok' | 'partial' | 'missing' | 'unknown' | 'disabled'
-  enabled: boolean  // From backend/ESP32 state
+  enabled: boolean // From backend/ESP32 state
 }
 
 interface Props {
@@ -118,7 +108,7 @@ interface Props {
 // ============================================================================
 
 const props = withDefaults(defineProps<Props>(), {
-  sensorHistoryMap: () => ({})
+  sensorHistoryMap: () => ({}),
 })
 
 const emit = defineEmits<{
@@ -130,15 +120,21 @@ const localInterval = ref(props.hardware.interval)
 const isEnabled = ref(props.hardware.enabled)
 
 // Sync isEnabled when props change (e.g., after ESP32 status update)
-watch(() => props.hardware.enabled, (newEnabled) => {
-  if (!toggling.value) {
-    isEnabled.value = newEnabled
+watch(
+  () => props.hardware.enabled,
+  newEnabled => {
+    if (!toggling.value) {
+      isEnabled.value = newEnabled
+    }
   }
-})
+)
 
-watch(() => props.hardware.interval, (newVal) => {
-  localInterval.value = newVal
-})
+watch(
+  () => props.hardware.interval,
+  newVal => {
+    localInterval.value = newVal
+  }
+)
 
 // ============================================================================
 // History Resolution (using composable)
@@ -175,13 +171,13 @@ const timeAgo = useTimeAgo(() => lastUpdate.value)
 // Actions (using composable)
 // ============================================================================
 
-const { resetting, toggling, saving, resetSensor, toggleEnabled, updateInterval } = 
+const { resetting, toggling, saving, resetSensor, toggleEnabled, updateInterval } =
   useHardwareSensorActions(toRef(props, 'moduleId'))
 
 const handleToggle = async () => {
   const previousState = isEnabled.value
   const newState = await toggleEnabled(props.hardware.hardwareKey, isEnabled.value)
-  
+
   if (newState !== previousState) {
     isEnabled.value = newState
     emit('enabled-change', props.hardware.hardwareKey, newState)
@@ -198,7 +194,7 @@ const handleReset = async () => {
 
 let intervalDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
-watch(localInterval, (newVal) => {
+watch(localInterval, newVal => {
   if (intervalDebounceTimer) clearTimeout(intervalDebounceTimer)
   intervalDebounceTimer = setTimeout(() => {
     emit('interval-change', props.hardware.hardwareKey, newVal)
@@ -209,7 +205,7 @@ let saveDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
 const handleIntervalChange = async () => {
   if (saveDebounceTimer) clearTimeout(saveDebounceTimer)
-  
+
   saveDebounceTimer = setTimeout(async () => {
     await updateInterval(props.hardware.hardwareKey, localInterval.value)
   }, 500)

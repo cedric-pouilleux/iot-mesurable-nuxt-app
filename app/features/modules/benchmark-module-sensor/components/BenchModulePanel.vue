@@ -26,9 +26,9 @@
         @open-zone-drawer="$emit('open-zone-drawer', moduleId)"
       />
 
-      <div 
+      <div
         class="grid gap-4 cards-transition"
-        style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));"
+        style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr))"
         :class="{ 'cards-pushed': optionsPanelOpen }"
       >
         <UnifiedSensorCard
@@ -42,7 +42,9 @@
           :graph-duration="graphDuration"
           :initial-active-sensor-key="group.initialKey"
           :is-panel-open="isCardPanelOpen(group)"
-          @toggle-graph="toggleGraph(group.sensors[0]?.key, activeSensorByGroup[group.type] || group.initialKey)"
+          @toggle-graph="
+            toggleGraph(group.sensors[0]?.key, activeSensorByGroup[group.type] || group.initialKey)
+          "
           @update:active-sensor="handleActiveSensorChange(group.type, $event)"
           @open-options="optionsPanelOpen = true"
         />
@@ -74,10 +76,14 @@ import { computed, ref } from 'vue'
 import type { DeviceStatus, SensorData, SensorDataPoint } from '../../common/types'
 import ModuleHeader from './ModuleHeader.vue'
 import SensorsModuleOptions from '~/features/modules/common/module-panel/SensorsModuleOptions.vue'
-import SensorDetailGraph from '../../common/card/SensorDetailGraph.vue' 
+import SensorDetailGraph from '../../common/card/SensorDetailGraph.vue'
 import UnifiedSensorCard from '../../common/card/UnifiedSensorCard.vue'
 import { getSensorLabel, getSensorColor, getSensorUnit } from '../../common/utils/sensors'
-import { getSensorTypeFromKey, getHardwareIdFromKey, getHardware } from '../../common/config/sensors'
+import {
+  getSensorTypeFromKey,
+  getHardwareIdFromKey,
+  getHardware,
+} from '../../common/config/sensors'
 
 interface Props {
   moduleId: string
@@ -108,7 +114,6 @@ const { debouncedGraphDuration: graphDuration } = useChartSettings(computed(() =
 // Track active sensor per group type (updated by UnifiedSensorCard)
 const activeSensorByGroup = reactive<Record<string, string>>({})
 
-
 // Handler for when a card changes its active sensor
 const handleActiveSensorChange = (groupType: string, sensorKey: string) => {
   activeSensorByGroup[groupType] = sensorKey
@@ -122,7 +127,12 @@ const sensorGroupsDefinition = [
   { type: 'co', label: 'CO', color: 'amber', sensorTypes: ['co'] },
   { type: 'voc', label: 'COV', color: 'pink', sensorTypes: ['voc', 'tvoc'] },
   { type: 'pressure', label: 'Pression', color: 'cyan', sensorTypes: ['pressure'] },
-  { type: 'pm', label: 'Particules fines', color: 'violet', sensorTypes: ['pm1', 'pm25', 'pm4', 'pm10'] },
+  {
+    type: 'pm',
+    label: 'Particules fines',
+    color: 'violet',
+    sensorTypes: ['pm1', 'pm25', 'pm4', 'pm10'],
+  },
 ]
 
 // ============================================================================
@@ -152,104 +162,115 @@ const sensorHistoryMap = computed<Record<string, SensorDataPoint[]>>(() => {
 
 // Build active groups from both sensorData and deviceStatus
 const activeGroups = computed(() => {
-  return sensorGroupsDefinition.map(group => {
-    // Collect all composite keys from sensorData that match this group
-    const dataKeys = Object.keys(props.sensorData).filter(compositeKey => {
-      const type = getSensorTypeFromKey(compositeKey)
-      return group.sensorTypes.includes(type)
-    })
-    
-    // Also check deviceStatus.sensors for sensors that might not have data yet
-    const statusSensorTypes = Object.keys(props.deviceStatus?.sensors || {})
-      .filter(sensorType => group.sensorTypes.includes(sensorType))
-    
-    // Create a set of all unique composite keys
-    // For status sensors without data, create placeholder keys
-    const allKeys = new Set<string>(dataKeys)
-    statusSensorTypes.forEach(sensorType => {
-      // Find if there's already a composite key for this sensor type
-      const hasDataKey = dataKeys.some(k => getSensorTypeFromKey(k) === sensorType)
-      if (!hasDataKey) {
-        // Add a simple key (will work as fallback)
-        allKeys.add(sensorType)
-      }
-    })
-    
-    const sensors = Array.from(allKeys).map(compositeKey => {
-      const sensorType = getSensorTypeFromKey(compositeKey)
-      const hardwareId = getHardwareIdFromKey(compositeKey)
-      const hardware = hardwareId ? getHardware(hardwareId) : null
-      
-      // Find the actual data key - if this is a simple key from status, find matching composite key
-      let dataKey = compositeKey
-      if (!hardwareId) {
-        // This is a simple key from status, find matching composite key in sensorData
-        const matchingKey = Object.keys(props.sensorData).find(k => getSensorTypeFromKey(k) === sensorType)
-        if (matchingKey) {
-          dataKey = matchingKey
+  return (
+    sensorGroupsDefinition
+      .map(group => {
+        // Collect all composite keys from sensorData that match this group
+        const dataKeys = Object.keys(props.sensorData).filter(compositeKey => {
+          const type = getSensorTypeFromKey(compositeKey)
+          return group.sensorTypes.includes(type)
+        })
+
+        // Also check deviceStatus.sensors for sensors that might not have data yet
+        const statusSensorTypes = Object.keys(props.deviceStatus?.sensors || {}).filter(
+          sensorType => group.sensorTypes.includes(sensorType)
+        )
+
+        // Create a set of all unique composite keys
+        // For status sensors without data, create placeholder keys
+        const allKeys = new Set<string>(dataKeys)
+        statusSensorTypes.forEach(sensorType => {
+          // Find if there's already a composite key for this sensor type
+          const hasDataKey = dataKeys.some(k => getSensorTypeFromKey(k) === sensorType)
+          if (!hasDataKey) {
+            // Add a simple key (will work as fallback)
+            allKeys.add(sensorType)
+          }
+        })
+
+        const sensors = Array.from(allKeys)
+          .map(compositeKey => {
+            const sensorType = getSensorTypeFromKey(compositeKey)
+            const hardwareId = getHardwareIdFromKey(compositeKey)
+            const hardware = hardwareId ? getHardware(hardwareId) : null
+
+            // Find the actual data key - if this is a simple key from status, find matching composite key
+            let dataKey = compositeKey
+            if (!hardwareId) {
+              // This is a simple key from status, find matching composite key in sensorData
+              const matchingKey = Object.keys(props.sensorData).find(
+                k => getSensorTypeFromKey(k) === sensorType
+              )
+              if (matchingKey) {
+                dataKey = matchingKey
+              }
+            }
+
+            // Use dataKey (composite key) for status lookup since ESP32 now publishes with composite keys
+            const statusData = getSensorData(dataKey)
+
+            // Get the last value from sensorData history (use dataKey for lookup)
+            const history = props.sensorData[dataKey] || []
+            const lastValue =
+              history.length > 0 ? history[history.length - 1]?.value : statusData.value
+
+            // Get hardware name from composite key or from config model
+            const hardwareName = hardware?.name || statusData.model
+            const sensorLabel = getSensorLabel(sensorType)
+
+            // Build display label based on group type
+            let displayLabel: string
+            if (group.type === 'pm') {
+              // PM sensors: just sensor label (PM1.0, PM2.5, etc.)
+              displayLabel = sensorLabel
+            } else if (group.type === 'co2' || group.type === 'voc') {
+              // CO2 and COV: just hardware name
+              displayLabel = hardwareName || sensorLabel
+            } else if (hardwareName) {
+              // Other sensors with hardware: just hardware name
+              displayLabel = hardwareName
+            } else {
+              // Fallback: just sensor label
+              displayLabel = sensorLabel
+            }
+
+            const sensorObj = {
+              key: dataKey, // Use the actual data key for history lookup
+              label: displayLabel,
+              sensorLabel, // Keep pure sensor label for card title
+              model: hardwareName, // Add hardware name for dropdown display
+              value: lastValue,
+              status: statusData.status,
+              interval: statusData.interval,
+            }
+
+            return sensorObj
+          })
+          .filter(s => s !== null)
+
+        if (sensors.length === 0) return null
+
+        // Determine initial active sensor from preferences
+        const prefKey = `sensor-pref-${group.label}`
+        const preferredSensorKey = props.deviceStatus?.preferences?.[prefKey]
+
+        const initialKey =
+          preferredSensorKey && sensors.find(s => s.key === preferredSensorKey)
+            ? preferredSensorKey
+            : sensors[0]?.key
+
+        return {
+          type: group.type,
+          label: group.label,
+          color: group.color,
+          sensors,
+          initialKey,
         }
-      }
-      
-      // Use dataKey (composite key) for status lookup since ESP32 now publishes with composite keys
-      const statusData = getSensorData(dataKey)
-      
-      // Get the last value from sensorData history (use dataKey for lookup)
-      const history = props.sensorData[dataKey] || []
-      const lastValue = history.length > 0 ? history[history.length - 1]?.value : statusData.value
-      
-      // Get hardware name from composite key or from config model
-      const hardwareName = hardware?.name || statusData.model
-      const sensorLabel = getSensorLabel(sensorType)
-      
-      // Build display label based on group type
-      let displayLabel: string
-      if (group.type === 'pm') {
-        // PM sensors: just sensor label (PM1.0, PM2.5, etc.)
-        displayLabel = sensorLabel
-      } else if (group.type === 'co2' || group.type === 'voc') {
-        // CO2 and COV: just hardware name
-        displayLabel = hardwareName || sensorLabel
-      } else if (hardwareName) {
-        // Other sensors with hardware: just hardware name
-        displayLabel = hardwareName
-      } else {
-        // Fallback: just sensor label
-        displayLabel = sensorLabel
-      }
-      
-      const sensorObj = {
-        key: dataKey, // Use the actual data key for history lookup
-        label: displayLabel,
-        sensorLabel, // Keep pure sensor label for card title
-        model: hardwareName, // Add hardware name for dropdown display
-        value: lastValue,
-        status: statusData.status,
-        interval: statusData.interval
-      }
-
-      return sensorObj
-    }).filter(s => s !== null)
-
-    if (sensors.length === 0) return null
-
-    // Determine initial active sensor from preferences
-    const prefKey = `sensor-pref-${group.label}`
-    const preferredSensorKey = props.deviceStatus?.preferences?.[prefKey]
-    
-    const initialKey = (preferredSensorKey && sensors.find(s => s.key === preferredSensorKey)) 
-      ? preferredSensorKey 
-      : sensors[0]?.key
-
-    return {
-      type: group.type,
-      label: group.label,
-      color: group.color,
-      sensors,
-      initialKey
-    }
-  }).filter((g): g is NonNullable<typeof g> => g !== null)
-    // Also hide groups where all sensors are disabled
-    .filter(g => g.sensors.some(s => s.status !== 'disabled'))
+      })
+      .filter((g): g is NonNullable<typeof g> => g !== null)
+      // Also hide groups where all sensors are disabled
+      .filter(g => g.sensors.some(s => s.status !== 'disabled'))
+  )
 })
 
 // ============================================================================
@@ -262,17 +283,19 @@ const getSensorHistory = (key: string) => {
   if (directData && directData.length > 0) {
     return directData
   }
-  
+
   // If key is not a composite key, search for matching composite key by sensor type
   const sensorType = getSensorTypeFromKey(key)
   if (sensorType === key) {
     // This is a simple key, find matching composite key in sensorData
-    const matchingKey = Object.keys(props.sensorData).find(k => getSensorTypeFromKey(k) === sensorType)
+    const matchingKey = Object.keys(props.sensorData).find(
+      k => getSensorTypeFromKey(k) === sensorType
+    )
     if (matchingKey && props.sensorData[matchingKey]?.length > 0) {
       return props.sensorData[matchingKey]
     }
   }
-  
+
   return []
 }
 
@@ -292,7 +315,7 @@ const toggleGraph = (sensorType: string, activeSensorKey?: string) => {
   if (isToggling.value) return
   isToggling.value = true
   const normalizedType = getSensorTypeFromKey(sensorType)
-  
+
   if (selectedGraphSensor.value === normalizedType) {
     selectedGraphSensor.value = null
     selectedGraphActiveSensor.value = null
@@ -300,7 +323,7 @@ const toggleGraph = (sensorType: string, activeSensorKey?: string) => {
     selectedGraphSensor.value = normalizedType
     selectedGraphActiveSensor.value = activeSensorKey || sensorType
   }
-  setTimeout(() => isToggling.value = false, 100)
+  setTimeout(() => (isToggling.value = false), 100)
 }
 
 /**
@@ -316,9 +339,11 @@ const isCardPanelOpen = (group: { sensors: { key: string }[] }) => {
  */
 const selectedGraphGroup = computed(() => {
   if (!selectedGraphSensor.value) return null
-  return activeGroups.value.find(g => 
-    g.sensors.some(s => getSensorTypeFromKey(s.key) === selectedGraphSensor.value)
-  ) || null
+  return (
+    activeGroups.value.find(g =>
+      g.sensors.some(s => getSensorTypeFromKey(s.key) === selectedGraphSensor.value)
+    ) || null
+  )
 })
 
 /**
@@ -343,7 +368,7 @@ const selectedGraphHistoryMap = computed<Record<string, SensorDataPoint[]>>(() =
 const calculatedUptime = computed(() => {
   const bootedAt = props.deviceStatus?.system?.bootedAt
   if (!bootedAt) return null
-  
+
   // Calculate uptime as seconds since boot
   const bootTime = new Date(bootedAt).getTime()
   const now = Date.now()
@@ -377,4 +402,3 @@ const calculatedUptime = computed(() => {
   transform: translateY(20px);
 }
 </style>
-

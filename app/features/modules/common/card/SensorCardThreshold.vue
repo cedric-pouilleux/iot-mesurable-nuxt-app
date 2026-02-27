@@ -1,18 +1,15 @@
 <template>
-  <div 
-    v-if="threshold && threshold.level !== 'good'" 
+  <div
+    v-if="threshold && threshold.level !== 'good'"
     class="flex items-center gap-1"
     :class="{ 'animate-blink': threshold.level === 'hazardous' }"
   >
-    <Icon 
-      name="tabler:alert-triangle" 
-      class="w-3.5 h-3.5" 
-      :class="isPanelOpen ? 'text-white' : textColorClass" 
-    />
-    <span 
-      class="text-sm font-bold" 
+    <Icon
+      name="tabler:alert-triangle"
+      class="w-3.5 h-3.5"
       :class="isPanelOpen ? 'text-white' : textColorClass"
-    >
+    />
+    <span class="text-sm font-bold" :class="isPanelOpen ? 'text-white' : textColorClass">
       {{ threshold.label }}
     </span>
   </div>
@@ -34,7 +31,7 @@ const props = withDefaults(defineProps<Props>(), {
 // Threshold text color based on level
 const textColorClass = computed(() => {
   if (!props.threshold) return ''
-  
+
   const colorMap: Record<string, string> = {
     good: 'text-emerald-600 dark:text-emerald-400',
     moderate: 'text-amber-600 dark:text-amber-400',
@@ -48,8 +45,13 @@ const textColorClass = computed(() => {
 <style scoped>
 /* Blinking animation for hazardous level */
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .animate-blink {

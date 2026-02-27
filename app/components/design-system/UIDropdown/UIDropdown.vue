@@ -1,19 +1,21 @@
 <template>
-  <div :class="[position]" ref="containerRef">
+  <div ref="containerRef" :class="[position]">
     <!-- Trigger Slot -->
-    <div @click.stop="toggle" class="cursor-pointer group w-full">
-      <slot name="trigger" :isOpen="isOpen" :toggle="toggle" :close="close" :size="size" :sizeClasses="sizeClasses"></slot>
+    <div class="cursor-pointer group w-full" @click.stop="toggle">
+      <slot
+        name="trigger"
+        :is-open="isOpen"
+        :toggle="toggle"
+        :close="close"
+        :size="size"
+        :size-classes="sizeClasses"
+      ></slot>
     </div>
 
     <!-- Dropdown Content -->
     <Transition name="dropdown">
-      <div
-        v-if="isOpen"
-        class="absolute z-[100]"
-        :class="dropdownClasses"
-        @click.stop
-      >
-        <slot name="content" :isOpen="isOpen" :close="close"></slot>
+      <div v-if="isOpen" class="absolute z-[100]" :class="dropdownClasses" @click.stop>
+        <slot name="content" :is-open="isOpen" :close="close"></slot>
       </div>
     </Transition>
   </div>
@@ -60,7 +62,7 @@ const props = withDefaults(defineProps<Props>(), {
   dropdownClass: '',
   independent: false,
   position: 'relative',
-  size: 'middle'
+  size: 'middle',
 })
 
 const { open: registryOpen, close: registryClose, isActive } = useDropdownRegistry()

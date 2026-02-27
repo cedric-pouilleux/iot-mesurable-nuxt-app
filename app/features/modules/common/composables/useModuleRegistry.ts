@@ -1,6 +1,6 @@
 /**
  * useModuleRegistry Composable
- * 
+ *
  * Provides access to module type definitions (manifests) from the backend.
  * Caches manifests to avoid repeated API calls.
  */
@@ -107,7 +107,7 @@ export const useModuleRegistry = () => {
   }
 
   /**
-   * Get sensor definitions from a manifest  
+   * Get sensor definitions from a manifest
    */
   const getSensors = (moduleType: string): SensorDef[] => {
     return manifests.value.get(moduleType)?.sensors || []
@@ -145,6 +145,6 @@ export const useModuleRegistry = () => {
     getHardware,
     getSensors,
     getSensorLabel,
-    getSensorUnit
+    getSensorUnit,
   }
 }

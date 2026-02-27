@@ -1,24 +1,30 @@
 <template>
   <component
-    :is="to ? 'NuxtLink' : 'span'" 
+    :is="to ? 'NuxtLink' : 'span'"
     :to="to"
     class="inline-flex items-center justify-center gap-1.5 rounded-md relative overflow-hidden tracking-wide transition-all duration-200"
-    :class="[variantClasses, sizeClasses, (clickable || to) ? 'tag-clickable cursor-pointer' : '', icon ? 'pr-[6px]' : '']"
+    :class="[
+      variantClasses,
+      sizeClasses,
+      clickable || to ? 'tag-clickable cursor-pointer' : '',
+      icon ? 'pr-[6px]' : '',
+    ]"
   >
-    <Icon 
-      v-if="icon" 
-      :name="icon" 
-      :class="['w-4 h-4 transition-transform duration-300', iconClass]" 
+    <Icon
+      v-if="icon"
+      :name="icon"
+      :class="['w-4 h-4 transition-transform duration-300', iconClass]"
     />
-    <span 
-      v-if="$slots.default || label" 
+    <span
+      v-if="$slots.default || label"
       class="relative z-10 font-medium leading-none"
       :class="{ 'pr-1': icon }"
     >
       <slot>{{ label }}</slot>
     </span>
   </component>
-</template>flex flex-wrap items-center gap-4
+</template>
+flex flex-wrap items-center gap-4
 
 <script setup lang="ts">
 import { computed } from 'vue'
@@ -112,4 +118,3 @@ const variantClasses = computed(() => {
   opacity: 1;
 }
 </style>
-

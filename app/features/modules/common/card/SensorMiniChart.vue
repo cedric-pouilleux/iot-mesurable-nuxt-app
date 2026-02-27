@@ -1,8 +1,13 @@
 <template>
   <div v-if="showCharts" class="h-[92px] w-full relative mt-2 rounded-b-lg overflow-hidden">
     <!-- Loading overlay -->
-    <div v-if="isLoading" class="absolute inset-0 bg-white/80 dark:bg-gray-800/80 flex items-center justify-center z-10">
-      <div class="animate-spin w-5 h-5 border-2 border-gray-300 border-t-emerald-500 rounded-full"></div>
+    <div
+      v-if="isLoading"
+      class="absolute inset-0 bg-white/80 dark:bg-gray-800/80 flex items-center justify-center z-10"
+    >
+      <div
+        class="animate-spin w-5 h-5 border-2 border-gray-300 border-t-emerald-500 rounded-full"
+      ></div>
     </div>
 
     <!-- Maximize button -->
@@ -39,7 +44,16 @@ import { useChartSettings } from '~/features/modules/common/module-panel/composa
 
 // Register ChartJS components
 if (process.client) {
-  ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, TimeScale, Filler, Tooltip, annotationPlugin)
+  ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    TimeScale,
+    Filler,
+    Tooltip,
+    annotationPlugin
+  )
 }
 
 interface Props {
@@ -60,11 +74,16 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 defineEmits<{
-  'maximize': []
+  maximize: []
 }>()
 
 const { getThresholdColor, getThresholdDefinition } = useThresholds()
-const { showCharts, showThresholdLines, debouncedColorThresholds: colorThresholds, debouncedUseFixedScale: useFixedScale } = useChartSettings(computed(() => props.moduleId))
+const {
+  showCharts,
+  showThresholdLines,
+  debouncedColorThresholds: colorThresholds,
+  debouncedUseFixedScale: useFixedScale,
+} = useChartSettings(computed(() => props.moduleId))
 
 // Color mapping
 const colorMap: Record<string, string> = {
@@ -79,7 +98,7 @@ const colorMap: Record<string, string> = {
 }
 
 const strokeColor = computed(() => colorMap[props.color] || colorMap.gray)
-const chartStrokeColor = computed(() => props.isPanelOpen ? '#ffffff' : strokeColor.value)
+const chartStrokeColor = computed(() => (props.isPanelOpen ? '#ffffff' : strokeColor.value))
 
 // Helper function
 const hexToRgba = (hex: string, alpha: number) => {
@@ -107,21 +126,28 @@ const chartData = computed<ChartData<'line'> | null>(() => {
 
   if (filteredData.length < 2) return null
 
-  const sortedData = [...filteredData].sort((a, b) => 
-    new Date(a.time).getTime() - new Date(b.time).getTime()
+  const sortedData = [...filteredData].sort(
+    (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime()
   )
 
   // Gap detection
   const gapIndices = new Set<number>()
   const timeGaps: number[] = []
   for (let i = 1; i < sortedData.length; i++) {
-    timeGaps.push(new Date(sortedData[i].time).getTime() - new Date(sortedData[i-1].time).getTime())
+    timeGaps.push(
+      new Date(sortedData[i].time).getTime() - new Date(sortedData[i - 1].time).getTime()
+    )
   }
-  const medianGap = timeGaps.length ? timeGaps.sort((a,b) => a-b)[Math.floor(timeGaps.length/2)] : 60000
+  const medianGap = timeGaps.length
+    ? timeGaps.sort((a, b) => a - b)[Math.floor(timeGaps.length / 2)]
+    : 60000
   const gapThreshold = Math.max(medianGap * 5, 2 * 60 * 60 * 1000)
 
   for (let i = 1; i < sortedData.length; i++) {
-    if (new Date(sortedData[i].time).getTime() - new Date(sortedData[i-1].time).getTime() > gapThreshold) {
+    if (
+      new Date(sortedData[i].time).getTime() - new Date(sortedData[i - 1].time).getTime() >
+      gapThreshold
+    ) {
       gapIndices.add(i - 1)
     }
   }
@@ -160,7 +186,7 @@ const chartData = computed<ChartData<'line'> | null>(() => {
         fill: false,
         pointRadius: 0,
         segment: {
-          borderDash: (ctx: any) => gapIndices.has(ctx.p0DataIndex) ? [4, 4] : undefined,
+          borderDash: (ctx: any) => (gapIndices.has(ctx.p0DataIndex) ? [4, 4] : undefined),
           borderColor: (ctx: any) => {
             if (gapIndices.has(ctx.p0DataIndex)) {
               return hexToRgba(strokeColor.value, 0.3)
@@ -171,17 +197,17 @@ const chartData = computed<ChartData<'line'> | null>(() => {
               return endColor || startColor || undefined
             }
             return undefined
-          }
-        }
-      }
-    ]
+          },
+        },
+      },
+    ],
   }
 })
 
 // Chart options
 const chartOptions = computed<ChartOptions<'line'>>(() => {
   const annotations: Record<string, any> = {}
-  
+
   if (showThresholdLines.value) {
     const thresholds = getThresholdDefinition(props.sensorKey)
     if (thresholds) {
@@ -192,7 +218,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => {
         borderColor: 'rgba(245, 158, 11, 0.6)',
         borderWidth: 1,
         borderDash: [4, 4],
-        label: { display: false }
+        label: { display: false },
       }
       annotations.poorLine = {
         type: 'line',
@@ -201,7 +227,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => {
         borderColor: 'rgba(249, 115, 22, 0.6)',
         borderWidth: 1,
         borderDash: [4, 4],
-        label: { display: false }
+        label: { display: false },
       }
       annotations.hazardousLine = {
         type: 'line',
@@ -210,7 +236,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => {
         borderColor: 'rgba(239, 68, 68, 0.6)',
         borderWidth: 1,
         borderDash: [4, 4],
-        label: { display: false }
+        label: { display: false },
       }
     }
   }
@@ -222,13 +248,15 @@ const chartOptions = computed<ChartOptions<'line'>>(() => {
     interaction: { intersect: false, mode: 'index' as const },
     scales: {
       x: { type: 'time', display: false },
-      y: { 
+      y: {
         display: false,
-        ...(useFixedScale.value && getSensorRange(props.sensorKey) ? {
-          min: getSensorRange(props.sensorKey)?.min,
-          max: getSensorRange(props.sensorKey)?.max
-        } : {})
-      }
+        ...(useFixedScale.value && getSensorRange(props.sensorKey)
+          ? {
+              min: getSensorRange(props.sensorKey)?.min,
+              max: getSensorRange(props.sensorKey)?.max,
+            }
+          : {}),
+      },
     },
     plugins: {
       legend: { display: false },
@@ -255,11 +283,11 @@ const chartOptions = computed<ChartOptions<'line'>>(() => {
           label: (item: any) => {
             const val = item.parsed.y
             return typeof val === 'number' ? val.toFixed(1) : ''
-          }
-        }
+          },
+        },
       },
-      annotation: { annotations }
-    }
+      annotation: { annotations },
+    },
   }
 })
 </script>

@@ -1,4 +1,3 @@
-
 export interface ModuleStorageStats {
   rowCount: number
   estimatedSizeBytes: number
@@ -27,7 +26,9 @@ export function useModuleStorage(moduleId: Ref<string>) {
     error.value = null
 
     try {
-      const data = await $fetch<ModuleStorageStats>(`${apiUrl}/api/modules/${moduleId.value}/storage`)
+      const data = await $fetch<ModuleStorageStats>(
+        `${apiUrl}/api/modules/${moduleId.value}/storage`
+      )
 
       if (data) {
         storageStats.value = data
@@ -44,50 +45,57 @@ export function useModuleStorage(moduleId: Ref<string>) {
   const projections = (
     customIntervals: Ref<Record<string, number> | undefined>,
     customEnabled: Ref<Record<string, boolean> | undefined>
-  ) => computed(() => {
-    if (!storageStats.value) return { daily: 0, monthly: 0, yearly: 0 }
+  ) =>
+    computed(() => {
+      if (!storageStats.value) return { daily: 0, monthly: 0, yearly: 0 }
 
-    let dailyRows = 0
+      let dailyRows = 0
 
-    // We iterate over active sensors from valid stats first
-    storageStats.value.activeSensors.forEach(s => {
-      // 1. Check if disabled via override (optimistic)
-      // The s.sensorType might need mapping to hardwareKey if overrides are keyed by hardwareKey.
-      // But activeSensors from backend has 'sensorType'.
-      // intervalOverrides in parent are keyed by 'sensorType' (mapped from hardwareKey).
-      // So customEnabled should also be keyed by 'sensorType'.
+      // We iterate over active sensors from valid stats first
+      storageStats.value.activeSensors.forEach(s => {
+        // 1. Check if disabled via override (optimistic)
+        // The s.sensorType might need mapping to hardwareKey if overrides are keyed by hardwareKey.
+        // But activeSensors from backend has 'sensorType'.
+        // intervalOverrides in parent are keyed by 'sensorType' (mapped from hardwareKey).
+        // So customEnabled should also be keyed by 'sensorType'.
 
-      const isEnabled = customEnabled.value?.[s.sensorType] !== undefined
-        ? customEnabled.value[s.sensorType]
-        : true
+        const isEnabled =
+          customEnabled.value?.[s.sensorType] !== undefined
+            ? customEnabled.value[s.sensorType]
+            : true
 
-      if (customEnabled.value?.[s.sensorType] === false) {
-        return // Skip this sensor
+        if (customEnabled.value?.[s.sensorType] === false) {
+          return // Skip this sensor
+        }
+
+        const override = customIntervals.value?.[s.sensorType]
+        const interval =
+          override !== undefined
+            ? override
+            : s.intervalSeconds && s.intervalSeconds > 0
+              ? s.intervalSeconds
+              : 60
+
+        const measurementsPerDay = (24 * 60 * 60) / interval
+        dailyRows += measurementsPerDay
+      })
+
+      const bytesPerRow = 100 // Estimate
+
+      const daily = dailyRows * bytesPerRow
+
+      return {
+        daily,
+        monthly: daily * 30,
+        yearly: daily * 365,
       }
-
-      const override = customIntervals.value?.[s.sensorType]
-      const interval = (override !== undefined) ? override : (s.intervalSeconds && s.intervalSeconds > 0 ? s.intervalSeconds : 60)
-
-      const measurementsPerDay = (24 * 60 * 60) / interval
-      dailyRows += measurementsPerDay
     })
-
-    const bytesPerRow = 100 // Estimate
-
-    const daily = dailyRows * bytesPerRow
-
-    return {
-      daily,
-      monthly: daily * 30,
-      yearly: daily * 365
-    }
-  })
 
   return {
     storageStats,
     projections, // Now a function that returns a computed
     loading,
     error,
-    fetchStorageStats
+    fetchStorageStats,
   }
 }

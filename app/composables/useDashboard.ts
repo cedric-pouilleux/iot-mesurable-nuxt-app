@@ -1,4 +1,8 @@
-import type { DeviceStatus, SensorDataPoint, DashboardSensorData } from '~/features/modules/common/types'
+import type {
+  DeviceStatus,
+  SensorDataPoint,
+  DashboardSensorData,
+} from '~/features/modules/common/types'
 import { getApiModulesIdStatus, getApiModulesIdHistory } from '#api/client'
 import { processSensorData } from '~/utils/data-processing'
 
@@ -45,7 +49,10 @@ export const useDashboard = () => {
     if (!moduleId) return null
 
     try {
-      const response = await getApiModulesIdHistory(moduleId, { days: days.toString(), bucket } as any)
+      const response = await getApiModulesIdHistory(moduleId, {
+        days: days.toString(),
+        bucket,
+      } as any)
       const sensors = (response.data as Record<string, unknown>) || {}
 
       // Dynamically process all sensor keys

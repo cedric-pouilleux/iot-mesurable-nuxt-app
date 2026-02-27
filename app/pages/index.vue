@@ -1,9 +1,9 @@
 <template>
   <div class="min-h-screen dark:bg-gray-900 text-gray-800 dark:text-gray-100 p-4 sm:p-8">
-    <ZoneDrawer 
+    <ZoneDrawer
       :is-open="isZoneDrawerOpen"
       :current-device-id="activeDeviceForZone"
-      @close="isZoneDrawerOpen = false" 
+      @close="isZoneDrawerOpen = false"
       @zone-changed="handleZoneChanged"
     />
     <div class="max-w-7xl mx-auto">
@@ -32,13 +32,19 @@
           </div>
 
           <div v-else class="space-y-8">
-            <div v-for="group in modulesByZone" :key="group.zoneId ?? 'unassigned'" class="space-y-4">
-              <h2 class="text-lg font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-2">
+            <div
+              v-for="group in modulesByZone"
+              :key="group.zoneId ?? 'unassigned'"
+              class="space-y-4"
+            >
+              <h2
+                class="text-lg font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-2"
+              >
                 <Icon name="tabler:map-pin" class="w-5 h-5" />
                 {{ group.zoneName }}
                 <span class="text-sm font-normal text-gray-400">({{ group.modules.length }})</span>
               </h2>
-              
+
               <div class="space-y-6">
                 <ModulePanel
                   v-for="module in group.modules"
@@ -66,7 +72,7 @@
 
 <script setup lang="ts">
 import type { MqttMessage } from '../types'
-import ModulePanel from '@benchmark-module-sensors/components/BenchModulePanel.vue' 
+import ModulePanel from '@benchmark-module-sensors/components/BenchModulePanel.vue'
 import ZoneDrawer from '~/features/zones/components/ZoneDrawer.vue'
 import { useDatabase } from '~/features/modules/common/composables/useDatabase'
 import { useModules, useModulesData } from '~/features/modules/common/composables'
@@ -83,7 +89,13 @@ interface ModuleGroup {
 
 const { loadDbSize } = useDatabase()
 const { modules, error: modulesError, loadModules, addModuleFromTopic } = useModules()
-const { getModuleDeviceStatus, getModuleSensorData, handleModuleMessage, loadModuleDashboard, initializeModuleWithType } = useModulesData()
+const {
+  getModuleDeviceStatus,
+  getModuleSensorData,
+  handleModuleMessage,
+  loadModuleDashboard,
+  initializeModuleWithType,
+} = useModulesData()
 
 const {
   isLoading: dashboardLoading,
@@ -103,12 +115,18 @@ const { graphDuration } = useChartSettings()
  */
 const durationToDays = (duration: string): number => {
   switch (duration) {
-    case '1h': return 1 // API minimum is 1 day, frontend filters further
-    case '6h': return 1
-    case '12h': return 1
-    case '24h': return 1
-    case '7j': return 7
-    default: return 7
+    case '1h':
+      return 1 // API minimum is 1 day, frontend filters further
+    case '6h':
+      return 1
+    case '12h':
+      return 1
+    case '24h':
+      return 1
+    case '7j':
+      return 7
+    default:
+      return 7
   }
 }
 
@@ -127,14 +145,12 @@ const modulesByZone = computed<ModuleGroup[]>(() => {
 
   // Group modules by zone
   for (const zone of zones.value) {
-    const zoneModules = modules.value.filter(m => 
-      zone.devices?.some(d => d.moduleId === m.id)
-    )
+    const zoneModules = modules.value.filter(m => zone.devices?.some(d => d.moduleId === m.id))
     if (zoneModules.length > 0) {
       groups.push({
         zoneId: zone.id,
         zoneName: zone.name,
-        modules: zoneModules
+        modules: zoneModules,
       })
       zoneModules.forEach(m => assignedModuleIds.add(m.id))
     }
@@ -146,7 +162,7 @@ const modulesByZone = computed<ModuleGroup[]>(() => {
     groups.push({
       zoneId: null,
       zoneName: t('zones.unassigned'),
-      modules: unassigned
+      modules: unassigned,
     })
   }
 
@@ -218,17 +234,15 @@ const loadAllDashboards = async (): Promise<void> => {
   await Promise.all(promises)
 }
 
-
-
 /**
  * Reload history only for all modules (when duration changes)
  */
 const loadHistoryForAllModules = async (): Promise<void> => {
   isHistoryLoading.value = true
   const days = durationToDays(graphDuration.value)
-  
+
   const { loadHistory } = useDashboard()
-  
+
   const promises = modules.value.map(async module => {
     const sensors = await loadHistory(module.id, days)
     if (sensors) {
@@ -258,7 +272,7 @@ const reloadPage = (): void => {
 onMounted(async () => {
   isInitialLoading.value = true
   await Promise.all([loadModules(), fetchZones(), loadDbSize()])
-  
+
   // Initialize moduleType for each module from API /modules response
   // This ensures moduleType is available even if /status endpoint fails
   modules.value.forEach(module => {
@@ -266,7 +280,7 @@ onMounted(async () => {
       initializeModuleWithType(module.id, module.type)
     }
   })
-  
+
   connectMqtt()
   await loadAllDashboards()
   isInitialLoading.value = false

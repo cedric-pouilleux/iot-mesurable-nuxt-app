@@ -1,6 +1,6 @@
 /**
  * useZones Composable
- * 
+ *
  * Centralized state management for zones.
  * Provides reactive zones list and CRUD operations.
  */
@@ -32,10 +32,10 @@ export const useZones = () => {
     error.value = null
     try {
       const zonesData = await $fetch<Zone[]>('/api/zones')
-      
+
       // Fetch each zone's devices
       const zonesWithDevices = await Promise.all(
-        zonesData.map(async (zone) => {
+        zonesData.map(async zone => {
           try {
             const zoneDetail = await $fetch<Zone>(`/api/zones/${zone.id}`)
             return zoneDetail
@@ -63,11 +63,11 @@ export const useZones = () => {
    */
   const createZone = async (name: string, description?: string): Promise<Zone | null> => {
     if (!name.trim()) return null
-    
+
     try {
       const zone = await $fetch<Zone>('/api/zones', {
         method: 'POST',
-        body: { name: name.trim(), description: description?.trim() || null }
+        body: { name: name.trim(), description: description?.trim() || null },
       })
       // Add to local state with empty devices
       zones.value.push({ ...zone, devices: [] })
@@ -82,13 +82,17 @@ export const useZones = () => {
   /**
    * Update an existing zone
    */
-  const updateZone = async (id: string, name: string, description?: string | null): Promise<boolean> => {
+  const updateZone = async (
+    id: string,
+    name: string,
+    description?: string | null
+  ): Promise<boolean> => {
     if (!name.trim()) return false
-    
+
     try {
       await $fetch(`/api/zones/${id}`, {
         method: 'PUT',
-        body: { name: name.trim(), description }
+        body: { name: name.trim(), description },
       })
       // Update local state - keep order
       const zone = zones.value.find(z => z.id === id)
@@ -127,7 +131,7 @@ export const useZones = () => {
     try {
       await $fetch(`/api/zones/${zoneId}/devices/${encodeURIComponent(deviceId)}`, {
         method: 'POST',
-        body: {} // Required for Fastify
+        body: {}, // Required for Fastify
       })
       // Update local state
       const zone = zones.value.find(z => z.id === zoneId)
@@ -155,12 +159,12 @@ export const useZones = () => {
   const unassignDevice = async (deviceId: string): Promise<boolean> => {
     try {
       await $fetch(`/api/modules/${encodeURIComponent(deviceId)}/zone`, {
-        method: 'DELETE'
+        method: 'DELETE',
       })
       // Update local state reactively - create new array to trigger Vue reactivity
       zones.value = zones.value.map(zone => ({
         ...zone,
-        devices: zone.devices?.filter(d => d.moduleId !== deviceId) || []
+        devices: zone.devices?.filter(d => d.moduleId !== deviceId) || [],
       }))
       return true
     } catch (e) {
@@ -183,7 +187,7 @@ export const useZones = () => {
     zones: readonly(zones),
     isLoading: readonly(isLoading),
     error: readonly(error),
-    
+
     // Actions
     fetchZones,
     createZone,

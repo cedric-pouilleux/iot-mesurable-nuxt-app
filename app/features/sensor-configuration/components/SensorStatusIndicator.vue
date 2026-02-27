@@ -3,21 +3,17 @@
     SensorStatusIndicator
     Displays the visual status indicator for a hardware sensor
   -->
-  <div 
-    v-if="!isEnabled"
-    class="w-2 h-2 rounded-sm bg-red-500 flex-shrink-0"
-    :title="statusLabel"
-  />
-  <div 
+  <div v-if="!isEnabled" class="w-2 h-2 rounded-sm bg-red-500 flex-shrink-0" :title="statusLabel" />
+  <div
     v-else-if="status !== 'unknown'"
     class="w-2 h-2 rounded-full flex-shrink-0"
     :class="statusClass"
     :title="statusLabel"
   />
-  <Icon 
+  <Icon
     v-else
-    name="tabler:loader" 
-    class="w-3 h-3 text-gray-400 animate-spin flex-shrink-0" 
+    name="tabler:loader"
+    class="w-3 h-3 text-gray-400 animate-spin flex-shrink-0"
     :title="statusLabel"
   />
 </template>

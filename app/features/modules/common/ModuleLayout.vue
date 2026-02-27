@@ -28,7 +28,7 @@
         <div class="flex flex-wrap justify-between items-center gap-3">
           <!-- Left: Title slot -->
           <slot name="header-left" />
-          
+
           <!-- Right: Options slot -->
           <div class="flex items-center gap-2">
             <slot name="header-right" />
@@ -48,7 +48,7 @@
 <script setup lang="ts">
 /**
  * ModuleLayout
- * 
+ *
  * Reusable layout component for all module types.
  * Provides consistent structure with:
  * - Header with left/right slots

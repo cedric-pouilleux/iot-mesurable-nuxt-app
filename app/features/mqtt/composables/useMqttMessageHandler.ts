@@ -1,4 +1,10 @@
-import type { DeviceStatus, SystemInfo, SensorStatus, SensorsConfigData, HardwareInfo } from '~/features/modules/common/types'
+import type {
+  DeviceStatus,
+  SystemInfo,
+  SensorStatus,
+  SensorsConfigData,
+  HardwareInfo,
+} from '~/features/modules/common/types'
 
 /**
  * MQTT Topic Constants
@@ -11,8 +17,6 @@ export const MQTT_TOPICS = {
   HARDWARE_CONFIG: '/hardware/config',
   ONLINE: '/online',
 } as const
-
-
 
 /**
  * Check if a topic is a status/config topic
@@ -65,7 +69,10 @@ export function mergeSystemData(status: DeviceStatus, metadata: Partial<SystemIn
  * @param status - Current device status
  * @param metadata - Incoming system config metadata (includes moduleType from ESP32)
  */
-export function mergeSystemConfig(status: DeviceStatus, metadata: Partial<SystemInfo> & { moduleType?: string }): void {
+export function mergeSystemConfig(
+  status: DeviceStatus,
+  metadata: Partial<SystemInfo> & { moduleType?: string }
+): void {
   if (!status.system) status.system = {}
 
   if (metadata.ip) status.system.ip = metadata.ip

@@ -12,7 +12,7 @@ export const useSnackbar = () => {
     show: false,
     message: '',
     type: 'info',
-    timeout: 3000
+    timeout: 3000,
   }))
 
   let timer: NodeJS.Timeout | null = null
@@ -25,7 +25,7 @@ export const useSnackbar = () => {
       show: true,
       message,
       type,
-      timeout
+      timeout,
     }
 
     timer = setTimeout(() => {
@@ -41,6 +41,6 @@ export const useSnackbar = () => {
   return {
     snackbar,
     showSnackbar,
-    closeSnackbar
+    closeSnackbar,
   }
 }

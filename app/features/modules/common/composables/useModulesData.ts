@@ -117,7 +117,6 @@ export const useModulesData = () => {
     else if (message.value !== null) {
       const sensorKey = matchTopic(message.topic)
 
-
       if (sensorKey) {
         const newData: SensorDataPoint = {
           time: new Date(message.time),
@@ -151,7 +150,7 @@ export const useModulesData = () => {
         deviceStatus.sensors[sensorType] = {
           ...deviceStatus.sensors[sensorType],
           value: message.value,
-          status: 'ok'
+          status: 'ok',
         }
 
         // Update reactivity for status
@@ -236,7 +235,7 @@ export const useModulesData = () => {
       // Process each sensor in the dashboard data
       Object.entries(dashboardData.sensors).forEach(([key, values]) => {
         // Validation: verify if it's a known sensor (optional, but good for safety)
-        // if (!sensorRegistry.get(key)) return 
+        // if (!sensorRegistry.get(key)) return
 
         // Ensure values is an array
         if (Array.isArray(values)) {
@@ -259,10 +258,7 @@ export const useModulesData = () => {
    * Update only sensor data for a module (replaces existing data)
    * Used when changing time range without reloading status
    */
-  const updateModuleSensorData = (
-    moduleId: string,
-    sensors: SensorData
-  ): void => {
+  const updateModuleSensorData = (moduleId: string, sensors: SensorData): void => {
     initializeModule(moduleId)
     modulesSensorData.value.set(moduleId, { ...sensors })
     updateVersion.value++

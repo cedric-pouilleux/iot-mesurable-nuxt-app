@@ -14,31 +14,33 @@
         'border-green-100': snackbar.type === 'success',
         'border-red-100': snackbar.type === 'error',
         'border-blue-100': snackbar.type === 'info',
-        'border-yellow-100': snackbar.type === 'warning'
+        'border-yellow-100': snackbar.type === 'warning',
       }"
     >
-      <div 
+      <div
         class="w-2"
         :class="{
           'bg-green-500': snackbar.type === 'success',
           'bg-red-500': snackbar.type === 'error',
           'bg-blue-500': snackbar.type === 'info',
-          'bg-yellow-500': snackbar.type === 'warning'
+          'bg-yellow-500': snackbar.type === 'warning',
         }"
       ></div>
 
       <div class="flex items-center px-4 py-3 flex-1">
         <div class="mx-3">
-          <span 
+          <span
             class="font-semibold"
             :class="{
               'text-green-500': snackbar.type === 'success',
               'text-red-500': snackbar.type === 'error',
               'text-blue-500': snackbar.type === 'info',
-              'text-yellow-500': snackbar.type === 'warning'
+              'text-yellow-500': snackbar.type === 'warning',
             }"
           >
-            {{ snackbar.type === 'success' ? 'Succès' : snackbar.type === 'error' ? 'Erreur' : 'Info' }}
+            {{
+              snackbar.type === 'success' ? 'Succès' : snackbar.type === 'error' ? 'Erreur' : 'Info'
+            }}
           </span>
           <p class="text-sm text-gray-600">{{ snackbar.message }}</p>
         </div>

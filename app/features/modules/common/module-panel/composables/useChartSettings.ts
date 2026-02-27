@@ -19,14 +19,16 @@ const defaultSettings: ChartSettings = {
   showAlertThresholds: true,
   minimalMode: false,
   graphDuration: '24h',
-  useFixedScale: false
+  useFixedScale: false,
 }
 
 export function useChartSettings(moduleIdInput: MaybeRef<string> = 'global') {
   const moduleId = computed(() => toValue(moduleIdInput))
 
   // State keyed by module ID
-  const settings = useState<ChartSettings>(`chart-settings-${moduleId.value}`, () => ({ ...defaultSettings }))
+  const settings = useState<ChartSettings>(`chart-settings-${moduleId.value}`, () => ({
+    ...defaultSettings,
+  }))
 
   // Storage Key
   const storageKey = computed(() => `${STORAGE_KEY_PREFIX}${moduleId.value}`)
@@ -78,7 +80,11 @@ export function useChartSettings(moduleIdInput: MaybeRef<string> = 'global') {
 
   // Watch for changes and debounce updates
   watch(
-    () => [settings.value.graphDuration, settings.value.colorThresholds, settings.value.useFixedScale],
+    () => [
+      settings.value.graphDuration,
+      settings.value.colorThresholds,
+      settings.value.useFixedScale,
+    ],
     ([newDuration, newColorThresholds, newFixedScale]) => {
       if (debounceTimer) clearTimeout(debounceTimer)
       debounceTimer = setTimeout(() => {
@@ -91,7 +97,7 @@ export function useChartSettings(moduleIdInput: MaybeRef<string> = 'global') {
 
   const showCharts = computed({
     get: () => true, // Always show charts in normal mode
-    set: () => { } // No-op
+    set: () => {}, // No-op
   })
 
   const graphDuration = computed({
@@ -99,7 +105,7 @@ export function useChartSettings(moduleIdInput: MaybeRef<string> = 'global') {
     set: (value: string) => {
       settings.value.graphDuration = value
       saveSettings()
-    }
+    },
   })
 
   // ... (other setters)
@@ -110,35 +116,61 @@ export function useChartSettings(moduleIdInput: MaybeRef<string> = 'global') {
     graphDuration,
     useFixedScale: computed({
       get: () => settings.value.useFixedScale,
-      set: (val) => { settings.value.useFixedScale = val; saveSettings() }
+      set: val => {
+        settings.value.useFixedScale = val
+        saveSettings()
+      },
     }),
 
     // Default immediate exports ...
     showThresholdLines: computed(() => false),
     colorThresholds: computed({
       get: () => settings.value.colorThresholds,
-      set: (val) => { settings.value.colorThresholds = val; saveSettings() }
+      set: val => {
+        settings.value.colorThresholds = val
+        saveSettings()
+      },
     }),
     showAlertThresholds: computed({
       get: () => settings.value.showAlertThresholds,
-      set: (val) => { settings.value.showAlertThresholds = val; saveSettings() }
+      set: val => {
+        settings.value.showAlertThresholds = val
+        saveSettings()
+      },
     }),
     minimalMode: computed({
       get: () => settings.value.minimalMode,
-      set: (val) => { settings.value.minimalMode = val; saveSettings() }
+      set: val => {
+        settings.value.minimalMode = val
+        saveSettings()
+      },
     }),
 
     // Toggles ...
-    toggleShowCharts: () => { showCharts.value = !showCharts.value },
-    toggleThresholdLines: () => { },
-    toggleColorThresholds: () => { settings.value.colorThresholds = !settings.value.colorThresholds; saveSettings() },
-    toggleAlertThresholds: () => { settings.value.showAlertThresholds = !settings.value.showAlertThresholds; saveSettings() },
-    toggleMinimalMode: () => { settings.value.minimalMode = !settings.value.minimalMode; saveSettings() },
-    toggleFixedScale: () => { settings.value.useFixedScale = !settings.value.useFixedScale; saveSettings() },
+    toggleShowCharts: () => {
+      showCharts.value = !showCharts.value
+    },
+    toggleThresholdLines: () => {},
+    toggleColorThresholds: () => {
+      settings.value.colorThresholds = !settings.value.colorThresholds
+      saveSettings()
+    },
+    toggleAlertThresholds: () => {
+      settings.value.showAlertThresholds = !settings.value.showAlertThresholds
+      saveSettings()
+    },
+    toggleMinimalMode: () => {
+      settings.value.minimalMode = !settings.value.minimalMode
+      saveSettings()
+    },
+    toggleFixedScale: () => {
+      settings.value.useFixedScale = !settings.value.useFixedScale
+      saveSettings()
+    },
 
     // EXPOSE DEBOUNCED VALUES FOR CHARTS
     debouncedGraphDuration: readonly(debouncedGraphDuration),
     debouncedColorThresholds: readonly(debouncedColorThresholds),
-    debouncedUseFixedScale: readonly(debouncedUseFixedScale)
+    debouncedUseFixedScale: readonly(debouncedUseFixedScale),
   }
 }

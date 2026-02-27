@@ -10,8 +10,14 @@ export default defineNuxtConfig({
 
   alias: {
     '@module-card': path.resolve(__dirname, 'app/features/modules/common/card'),
-    '@sensors-options': path.resolve(__dirname, 'app/features/modules/common/sensors-module-options'),
-    '@benchmark-module-sensors': path.resolve(__dirname, 'app/features/modules/benchmark-module-sensor'),
+    '@sensors-options': path.resolve(
+      __dirname,
+      'app/features/modules/common/sensors-module-options'
+    ),
+    '@benchmark-module-sensors': path.resolve(
+      __dirname,
+      'app/features/modules/benchmark-module-sensor'
+    ),
     '#api': path.resolve(__dirname, 'app/api'),
   },
 
@@ -23,8 +29,7 @@ export default defineNuxtConfig({
       { code: 'en', name: 'English', file: 'en.json' },
     ],
     defaultLocale: 'fr',
-    strategy: 'prefix',
-    lazy: true,
+    strategy: 'prefix_except_default',
     langDir: 'locales',
     detectBrowserLanguage: {
       useCookie: false,
@@ -70,7 +75,11 @@ export default defineNuxtConfig({
   // Proxy interne pour éviter les problèmes CORS et Docker Network
   routeRules: {
     // En dev local sans docker, fallback sur 127.0.0.1:3001 (IPv4 explicite)
-    '/api/**': { proxy: `${process.env.API_URL || 'http://127.0.0.1:3001'}/api/**`.replace('/api/api/', '/api/') },
+    '/api/**': {
+      proxy: `${process.env.API_URL || 'http://127.0.0.1:3001'}/api/**`.replace(
+        '/api/api/',
+        '/api/'
+      ),
+    },
   },
 })
-

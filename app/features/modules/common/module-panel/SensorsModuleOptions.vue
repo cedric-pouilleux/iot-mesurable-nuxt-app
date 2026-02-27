@@ -1,24 +1,18 @@
 <template>
-  <div 
-    class="options-wrapper"
-    :class="{ 'is-open': isOpen }"
-  > 
+  <div class="options-wrapper" :class="{ 'is-open': isOpen }">
     <div class="options-content">
       <div class="grid grid-cols-6 gap-4 mb-5 items-stretch">
-        <DeviceInfoSection
-          :deviceStatus="deviceStatus"
-          :moduleId="moduleId"
-        />
+        <DeviceInfoSection :device-status="deviceStatus" :module-id="moduleId" />
         <ModuleConfigurationSection
-          :moduleId="moduleId"
+          :module-id="moduleId"
           @open-zone-drawer="$emit('open-zone-drawer')"
           @zone-changed="$emit('zone-changed')"
         />
         <SensorConfigSection
-          :deviceStatus="deviceStatus"
-          :moduleId="moduleId"
-          :sensorHistoryMap="sensorHistoryMap"
-          :dbSize="dbSize"
+          :device-status="deviceStatus"
+          :module-id="moduleId"
+          :sensor-history-map="sensorHistoryMap"
+          :db-size="dbSize"
         />
       </div>
     </div>
@@ -44,17 +38,20 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   'toggle-zone': [zoneId: string]
-  'open-zone-drawer': [] 
+  'open-zone-drawer': []
   'zone-changed': []
 }>()
 
 const { dbSize, loadDbSize } = useDatabase()
 
-watch(() => props.isOpen, (isOpen) => {
-  if (isOpen) {
-    loadDbSize()
+watch(
+  () => props.isOpen,
+  isOpen => {
+    if (isOpen) {
+      loadDbSize()
+    }
   }
-})
+)
 </script>
 
 <style scoped>
@@ -62,7 +59,7 @@ watch(() => props.isOpen, (isOpen) => {
   display: grid;
   grid-template-rows: 0fr;
   transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden; 
+  overflow: hidden;
 }
 
 .options-wrapper.is-open {
@@ -73,13 +70,17 @@ watch(() => props.isOpen, (isOpen) => {
   min-height: 0;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.1s ease-out, visibility 0s 0.1s;
+  transition:
+    opacity 0.1s ease-out,
+    visibility 0s 0.1s;
 }
 
 .options-wrapper.is-open .options-content {
   opacity: 1;
   visibility: visible;
   padding-bottom: 1.25rem;
-  transition: opacity 0.3s ease-out 0.15s, visibility 0s 0s;
+  transition:
+    opacity 0.3s ease-out 0.15s,
+    visibility 0s 0s;
 }
 </style>

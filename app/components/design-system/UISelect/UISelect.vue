@@ -1,7 +1,10 @@
 <template>
   <UIDropdown
     :id="id"
-    :dropdown-class="'w-full min-w-[100px] bg-white dark:bg-gray-800 rounded-lg shadow-xl mt-1 overflow-hidden border border-gray-200 dark:border-gray-700 z-50 ' + dropdownClass"
+    :dropdown-class="
+      'w-full min-w-[100px] bg-white dark:bg-gray-800 rounded-lg shadow-xl mt-1 overflow-hidden border border-gray-200 dark:border-gray-700 z-50 ' +
+      dropdownClass
+    "
     :size="size"
   >
     <template #trigger="{ isOpen, toggle }">
@@ -10,20 +13,19 @@
         class="flex items-center justify-between border transition-colors bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 w-full"
         :class="[
           sizeClasses,
-          isOpen ? 'border-blue-500 ring-1 ring-blue-500' : 'hover:border-gray-300 dark:hover:border-gray-500',
-          disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+          isOpen
+            ? 'border-blue-500 ring-1 ring-blue-500'
+            : 'hover:border-gray-300 dark:hover:border-gray-500',
+          disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
         ]"
-        @click.stop="!disabled && toggle()"
         :disabled="disabled"
+        @click.stop="!disabled && toggle()"
       >
         <span class="font-medium truncate mr-2">{{ displayLabel }}</span>
-        <Icon 
-          name="tabler:chevron-down" 
+        <Icon
+          name="tabler:chevron-down"
           class="transition-transform duration-200 flex-shrink-0"
-          :class="[
-            iconSizeClass,
-            isOpen ? 'rotate-180' : ''
-          ]" 
+          :class="[iconSizeClass, isOpen ? 'rotate-180' : '']"
         />
       </button>
     </template>
@@ -34,19 +36,24 @@
           v-for="option in normalizedOptions"
           :key="String(option.value)"
           type="button"
-          @click="select(option.value); close()"
           class="w-full text-left transition-colors flex items-center justify-between"
           :class="[
             optionClass,
             isSelected(option.value)
               ? 'bg-gray-100 dark:bg-gray-700 text-blue-600 dark:text-blue-400 font-medium'
-              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
           ]"
+          @click="
+            () => {
+              select(option.value)
+              close()
+            }
+          "
         >
           <span class="truncate">{{ option.label }}</span>
-          <Icon 
-            v-if="isSelected(option.value)" 
-            name="tabler:check" 
+          <Icon
+            v-if="isSelected(option.value)"
+            name="tabler:check"
             class="text-blue-500 flex-shrink-0 ml-2"
             :class="iconSizeClass"
           />
@@ -92,12 +99,12 @@ const props = withDefaults(defineProps<Props>(), {
   size: 'middle',
   disabled: false,
   id: undefined,
-  dropdownClass: ''
+  dropdownClass: '',
 })
 
 const emit = defineEmits<{
   'update:modelValue': [value: string | number]
-  'change': [value: string | number]
+  change: [value: string | number]
 }>()
 
 // ============================================================================

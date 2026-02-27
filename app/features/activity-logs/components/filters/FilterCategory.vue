@@ -6,9 +6,11 @@
     <template #trigger="{ isOpen }">
       <button
         class="px-2.5 py-1.5 text-xs font-medium rounded border transition-colors flex items-center gap-1.5"
-        :class="isOpen || modelValue.length > 0
-          ? 'bg-gray-800 dark:bg-gray-700 text-white border-gray-800 dark:border-gray-600' 
-          : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'"
+        :class="
+          isOpen || modelValue.length > 0
+            ? 'bg-gray-800 dark:bg-gray-700 text-white border-gray-800 dark:border-gray-600'
+            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+        "
       >
         <Icon name="tabler:category" class="w-3.5 h-3.5" />
         Catégorie
@@ -21,29 +23,41 @@
     <template #content>
       <div class="py-1">
         <button
-          @click="$emit('update:modelValue', [])"
           class="w-full text-left px-3 py-1.5 text-xs transition-colors flex items-center justify-between"
-          :class="modelValue.length === 0 
-            ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-medium' 
-            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
+          :class="
+            modelValue.length === 0
+              ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-medium'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+          "
+          @click="$emit('update:modelValue', [])"
         >
           Toutes
-          <Icon v-if="modelValue.length === 0" name="tabler:check" class="w-3.5 h-3.5 text-emerald-500" />
+          <Icon
+            v-if="modelValue.length === 0"
+            name="tabler:check"
+            class="w-3.5 h-3.5 text-emerald-500"
+          />
         </button>
         <button
           v-for="cat in LOG_CATEGORIES"
           :key="cat.value"
-          @click="toggle(cat.value)"
           class="w-full text-left px-3 py-1.5 text-xs transition-colors flex items-center justify-between"
-          :class="modelValue.includes(cat.value) 
-            ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-medium' 
-            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
+          :class="
+            modelValue.includes(cat.value)
+              ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-medium'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+          "
+          @click="toggle(cat.value)"
         >
           <span class="flex items-center gap-2">
             <div class="w-2 h-2 rounded-full" :style="{ backgroundColor: cat.color }"></div>
             {{ cat.label }}
           </span>
-          <Icon v-if="modelValue.includes(cat.value)" name="tabler:check" class="w-3.5 h-3.5 text-emerald-500" />
+          <Icon
+            v-if="modelValue.includes(cat.value)"
+            name="tabler:check"
+            class="w-3.5 h-3.5 text-emerald-500"
+          />
         </button>
       </div>
     </template>

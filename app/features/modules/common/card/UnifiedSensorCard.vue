@@ -1,22 +1,22 @@
 <template>
   <div
     class="relative rounded-lg group/card dark:border-gray-700 flex flex-col justify-between flex-1 min-w-0 transition-all duration-300"
-    :class="[
-      isPanelOpen 
-        ? openBgClass 
-        : 'bg-gray-50 dark:bg-gray-900'
-    ]"
+    :class="[isPanelOpen ? openBgClass : 'bg-gray-50 dark:bg-gray-900']"
   >
     <!-- MINIMALIST MODE -->
     <Transition name="mode-switch" mode="out-in">
-      <div 
-        v-if="minimalMode" 
-        key="minimal" 
+      <div
+        v-if="minimalMode"
+        key="minimal"
         class="p-3 flex flex-col justify-start cursor-pointer"
         @click="$emit('toggle-graph')"
       >
         <div class="flex items-center gap-1.5">
-          <span class="text-sm font-medium" :class="isPanelOpen ? 'text-white' : darkerValueColorClass">{{ currentTitle }}</span>
+          <span
+            class="text-sm font-medium"
+            :class="isPanelOpen ? 'text-white' : darkerValueColorClass"
+            >{{ currentTitle }}</span
+          >
           <Icon
             v-if="shouldShowTrend"
             :name="trend === 'up' ? 'tabler:triangle-filled' : 'tabler:triangle-inverted-filled'"
@@ -25,17 +25,28 @@
             :title="trendTooltip"
           />
         </div>
-        
+
         <!-- Value + Unit -->
         <div class="flex items-baseline">
-          <span class="text-3xl font-bold tracking-tight" :class="isPanelOpen ? 'text-white' : valueColorClass">
+          <span
+            class="text-3xl font-bold tracking-tight"
+            :class="isPanelOpen ? 'text-white' : valueColorClass"
+          >
             {{ displayValue }}
           </span>
-          <span class="text-base font-medium ml-1" :class="isPanelOpen ? 'text-white/70' : lightValueColorClass">{{ unit }}</span>
+          <span
+            class="text-base font-medium ml-1"
+            :class="isPanelOpen ? 'text-white/70' : lightValueColorClass"
+            >{{ unit }}</span
+          >
         </div>
-        
+
         <!-- Threshold Alert -->
-        <SensorCardThreshold v-if="showAlertThresholds" :threshold="thresholdAlert" :isPanelOpen="isPanelOpen" />
+        <SensorCardThreshold
+          v-if="showAlertThresholds"
+          :threshold="thresholdAlert"
+          :is-panel-open="isPanelOpen"
+        />
       </div>
 
       <!-- NORMAL MODE -->
@@ -51,8 +62,8 @@
                   :class="isPanelOpen ? 'text-white' : statusColor"
                 />
               </UITooltip>
-              <span 
-                :class="[isPanelOpen ? 'text-white' : darkerValueColorClass, 'font-bold']" 
+              <span
+                :class="[isPanelOpen ? 'text-white' : darkerValueColorClass, 'font-bold']"
                 class="text-[13px] cursor-pointer hover:opacity-80 transition-opacity"
                 @click="$emit('toggle-graph')"
               >
@@ -63,11 +74,11 @@
             <div class="flex">
               <SensorDropdown
                 :sensors="enabledSensors"
-                :activeSensorKey="activeSensorKey"
-                :moduleId="moduleId"
-                :groupLabel="label"
+                :active-sensor-key="activeSensorKey"
+                :module-id="moduleId"
+                :group-label="label"
                 :color="color"
-                :isPanelOpen="isPanelOpen"
+                :is-panel-open="isPanelOpen"
                 @select="selectSensor"
               />
             </div>
@@ -78,31 +89,31 @@
             :value="displayRawValue"
             :unit="unit"
             :trend="trend"
-            :sensorKey="activeSensorKey"
+            :sensor-key="activeSensorKey"
             :color="color"
-            :isPanelOpen="isPanelOpen"
-            :showTrend="shouldShowTrend"
+            :is-panel-open="isPanelOpen"
+            :show-trend="shouldShowTrend"
             class="cursor-pointer hover:opacity-80 transition-opacity"
             @click="$emit('toggle-graph')"
           />
-          
+
           <!-- Threshold Alert -->
-          <SensorCardThreshold 
+          <SensorCardThreshold
             v-if="showAlertThresholds"
-            :threshold="thresholdAlert" 
-            :isPanelOpen="isPanelOpen" 
+            :threshold="thresholdAlert"
+            :is-panel-open="isPanelOpen"
           />
         </div>
 
         <SensorMiniChart
           :history="activeHistory"
-          :sensorKey="activeSensorKey"
+          :sensor-key="activeSensorKey"
           :label="label"
           :color="color"
-          :moduleId="moduleId"
-          :isPanelOpen="isPanelOpen"
-          :isLoading="isLoading"
-          :graphDuration="graphDuration"
+          :module-id="moduleId"
+          :is-panel-open="isPanelOpen"
+          :is-loading="isLoading"
+          :graph-duration="graphDuration"
           @maximize="$emit('toggle-graph')"
         />
       </div>
@@ -189,7 +200,9 @@ const {
 // ============================================================================
 
 const { evaluateThreshold, isTrendPositive } = useThresholds()
-const { showCharts, showAlertThresholds, minimalMode } = useChartSettings(computed(() => props.moduleId))
+const { showCharts, showAlertThresholds, minimalMode } = useChartSettings(
+  computed(() => props.moduleId)
+)
 
 // ============================================================================
 // State
@@ -198,9 +211,7 @@ const { showCharts, showAlertThresholds, minimalMode } = useChartSettings(comput
 const activeSensorKey = ref(props.initialActiveSensorKey || props.sensors[0]?.key)
 
 // Filter out disabled sensors for dropdown and graph
-const enabledSensors = computed(() => 
-  props.sensors.filter(s => s.status !== 'disabled')
-)
+const enabledSensors = computed(() => props.sensors.filter(s => s.status !== 'disabled'))
 
 // Ensure valid sensor key (must be from enabled sensors)
 if (!enabledSensors.value.find(s => s.key === activeSensorKey.value)) {
@@ -211,7 +222,9 @@ if (!enabledSensors.value.find(s => s.key === activeSensorKey.value)) {
 // Health Monitoring
 // ============================================================================
 
-const { getConnectionStatus, getTimeSinceLastMeasurement } = useDeviceHealth(computed(() => props.moduleId))
+const { getConnectionStatus, getTimeSinceLastMeasurement } = useDeviceHealth(
+  computed(() => props.moduleId)
+)
 
 const connectionStatus = computed(() => {
   if (!activeSensorKey.value) return 'unknown'
@@ -231,12 +244,12 @@ watch(activeSensorKey, async (newVal, oldVal) => {
   // Only save if the value actually changed (not just initialized)
   if (process.client && newVal && newVal !== oldVal) {
     emit('update:active-sensor', newVal)
-    
+
     try {
       const prefKey = `sensor-pref-${props.label}`
       await $fetch(`/api/modules/${props.moduleId}/preferences`, {
         method: 'PATCH',
-        body: { [prefKey]: newVal }
+        body: { [prefKey]: newVal },
       })
     } catch (e) {
       console.error('Failed to save preference', e)
@@ -248,13 +261,11 @@ watch(activeSensorKey, async (newVal, oldVal) => {
 // Computed: Active Sensor
 // ============================================================================
 
-const activeSensor = computed(() => 
-  props.sensors.find(s => s.key === activeSensorKey.value) || props.sensors[0]
+const activeSensor = computed(
+  () => props.sensors.find(s => s.key === activeSensorKey.value) || props.sensors[0]
 )
 
-const activeHistory = computed(() => 
-  props.historyMap[activeSensorKey.value] || []
-)
+const activeHistory = computed(() => props.historyMap[activeSensorKey.value] || [])
 
 // ============================================================================
 // Trend Calculation
@@ -263,17 +274,17 @@ const activeHistory = computed(() =>
 const trend = computed<'up' | 'down' | 'stable'>(() => {
   const history = activeHistory.value
   if (!history || history.length < 6) return 'stable'
-  
+
   const sorted = [...history]
     .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
     .slice(0, 6)
-  
+
   const recentAvg = (sorted[0].value + sorted[1].value + sorted[2].value) / 3
   const olderAvg = (sorted[3].value + sorted[4].value + sorted[5].value) / 3
-  
+
   const threshold = Math.abs(olderAvg) * 0.01 || 0.5
   const diff = recentAvg - olderAvg
-  
+
   if (diff > threshold) return 'up'
   if (diff < -threshold) return 'down'
   return 'stable'
@@ -358,7 +369,10 @@ const displayValue = computed(() => {
 // Unit Helper
 // ============================================================================
 
-import { getUnit as getUnitFromConfig, getSensorTypeFromKey } from '~/features/modules/common/config/sensors'
+import {
+  getUnit as getUnitFromConfig,
+  getSensorTypeFromKey,
+} from '~/features/modules/common/config/sensors'
 
 const getUnit = (sensorKey: string) => {
   if (!sensorKey) return ''
@@ -367,7 +381,7 @@ const getUnit = (sensorKey: string) => {
   return getUnitFromConfig(sensorType)
 }
 
-const unit = computed(() => activeSensor.value ? getUnit(activeSensor.value.key) : '')
+const unit = computed(() => (activeSensor.value ? getUnit(activeSensor.value.key) : ''))
 
 // ============================================================================
 // Title Logic
@@ -398,11 +412,11 @@ const currentTitle = computed(() => {
 
   // Use the active sensor key to determine the title
   if (activeSensor.value) {
-    // For PM: show specific PM type 
+    // For PM: show specific PM type
     if (activeSensor.value.key.includes('pm')) {
       return translateType(activeSensor.value.key)
     }
-    
+
     // For CO2/VOC: specific types
     if (activeSensor.value.key.includes('co2') || activeSensor.value.key.includes('voc')) {
       return translateType(activeSensor.value.key)
@@ -435,7 +449,7 @@ const statusIcon = computed(() => {
   if (healthStatus === 'connected') return 'tabler:circle-check-filled'
   if (healthStatus === 'stale') return 'tabler:alert-circle-filled'
   if (healthStatus === 'offline') return 'tabler:circle-x-filled'
-  
+
   // Fallback to sensor status if health not available
   const sensor = activeSensor.value
   if (sensor?.status === 'ok') return 'tabler:circle-check-filled'
@@ -448,7 +462,7 @@ const statusColor = computed(() => {
   if (healthStatus === 'connected') return valueColorClass.value
   if (healthStatus === 'stale') return 'text-amber-500'
   if (healthStatus === 'offline') return 'text-red-500'
-  
+
   // Fallback to sensor status
   const sensor = activeSensor.value
   if (sensor?.status === 'ok') return valueColorClass.value
@@ -460,7 +474,7 @@ const statusTooltip = computed(() => {
   const model = activeSensor.value?.model || activeSensor.value?.label || 'Capteur'
   const healthStatus = connectionStatus.value
   const timeSince = timeSinceLastMeasurement.value
-  
+
   if (healthStatus === 'connected') {
     return `${model}: Connecté ${timeSince ? `(il y a ${timeSince})` : ''}`
   }
@@ -470,7 +484,7 @@ const statusTooltip = computed(() => {
   if (healthStatus === 'offline') {
     return `${model}: Hors ligne ${timeSince ? `(dernière mesure il y a ${timeSince})` : ''}`
   }
-  
+
   // Fallback
   return `${model}: ${activeSensor.value?.status || 'Unknown'}`
 })

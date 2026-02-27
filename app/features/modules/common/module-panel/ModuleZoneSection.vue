@@ -1,8 +1,10 @@
 <template>
   <UIPanel :title="$t('modules.zone.title')">
     <div class="flex items-center justify-between">
-      <h3 class="text-[12px] font-medium text-gray-500 dark:text-gray-200">{{ $t('modules.zone.associatedZone') }}</h3>
-      
+      <h3 class="text-[12px] font-medium text-gray-500 dark:text-gray-200">
+        {{ $t('modules.zone.associatedZone') }}
+      </h3>
+
       <div class="flex items-center gap-2">
         <UISelect
           :model-value="currentZoneId"
@@ -12,7 +14,7 @@
           class="w-40"
           @update:model-value="handleZoneSelect"
         />
-        
+
         <UIButton
           icon="tabler:settings"
           variant="ghost"
@@ -60,7 +62,7 @@ const currentZoneId = computed(() => {
 const zoneOptions = computed(() => {
   return zones.value.map(z => ({
     label: z.name,
-    value: z.id
+    value: z.id,
   }))
 })
 
@@ -69,15 +71,15 @@ const handleZoneSelect = async (zoneId: string | number) => {
 
   try {
     const id = String(zoneId)
-    
+
     if (currentZoneId.value === id) {
       return
     }
-    
+
     if (currentZoneId.value) {
       await unassignDevice(props.moduleId)
     }
-    
+
     await assignDevice(id, props.moduleId)
     emit('zone-changed')
   } catch (e) {

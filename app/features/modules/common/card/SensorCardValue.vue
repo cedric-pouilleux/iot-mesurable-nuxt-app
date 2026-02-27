@@ -1,13 +1,13 @@
 <template>
   <div class="flex items-center">
     <!-- Value -->
-    <span 
-      class="text-3xl font-bold tracking-tight" 
+    <span
+      class="text-3xl font-bold tracking-tight"
       :class="isPanelOpen ? 'text-white' : valueColorClass"
     >
       {{ formattedValue }}
     </span>
-    
+
     <!-- Trend + Unit stacked vertically -->
     <div class="flex flex-col items-start ml-1 -mb-0.5">
       <!-- Trend Arrow -->
@@ -20,10 +20,10 @@
       />
       <!-- Empty space if no trend to maintain alignment -->
       <div v-else class="w-2.5 h-2.5 -mb-0.5"></div>
-      
+
       <!-- Unit -->
-      <span 
-        class="text-sm font-medium" 
+      <span
+        class="text-sm font-medium"
         :class="isPanelOpen ? 'text-white/70' : 'text-gray-400 dark:text-gray-400'"
       >
         {{ unit }}
@@ -71,7 +71,7 @@ const formattedValue = computed(() => {
 // Trend color based on whether trend is good or bad for this sensor type
 const trendColorClass = computed(() => {
   if (props.trend === 'stable') return 'text-gray-400'
-  
+
   const isPositive = isTrendPositive(props.sensorKey, props.trend)
   if (isPositive === true) return 'text-emerald-500'
   if (isPositive === false) return 'text-red-500'
@@ -80,10 +80,10 @@ const trendColorClass = computed(() => {
 
 const trendTooltip = computed(() => {
   if (props.trend === 'stable') return ''
-  
+
   const direction = props.trend === 'up' ? 'En hausse' : 'En baisse'
   const isPositive = isTrendPositive(props.sensorKey, props.trend)
-  
+
   if (isPositive === true) return `${direction} (positif)`
   if (isPositive === false) return `${direction} (négatif)`
   return direction

@@ -18,7 +18,7 @@ export const useSensorData = () => {
     // Extract sensor key from topic (last part after /)
     const parts = topic.split('/')
     const sensorKey = parts[parts.length - 1]
-    
+
     if (!SENSORS[sensorKey as SensorKey]) return
 
     const newData = { time: new Date(time), value }
@@ -46,7 +46,7 @@ export const useSensorData = () => {
       acc[key] = processSensorData(dashboardSensors?.[key] || [])
       return acc
     }, {} as SensorData)
-    
+
     sensorData.value = result
   }
 

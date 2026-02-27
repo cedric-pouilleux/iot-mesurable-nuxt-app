@@ -4,12 +4,12 @@
     Displays measurement type badges for a sensor
     When disabled, badges are shown with reduced opacity to indicate last known values
   -->
-  <div 
+  <div
     class="flex items-center gap-1 flex-shrink-0 transition-opacity"
     :class="{ 'opacity-40': !isEnabled }"
   >
-    <UITag 
-      v-for="m in measurements" 
+    <UITag
+      v-for="m in measurements"
       :key="m.key"
       :variant="getVariant(m.status)"
       size="xs"

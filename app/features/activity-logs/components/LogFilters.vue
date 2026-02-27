@@ -33,9 +33,9 @@
       @update:model-value="updateFilters({ search: $event })"
     />
     <button
-      @click="$emit('delete')"
       class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
       :title="$t('logs.deleteAll')"
+      @click="$emit('delete')"
     >
       <Icon name="tabler:trash" class="w-4 h-4" />
     </button>
