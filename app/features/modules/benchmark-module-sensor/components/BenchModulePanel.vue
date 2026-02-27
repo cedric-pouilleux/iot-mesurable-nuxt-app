@@ -1,17 +1,5 @@
 <template>
-  <!--
-    BenchModulePanel.vue
-    ====================
-    Main panel for benchmark-module-sensor.
-    
-    Uses:
-    - ModuleLayout for structure
-    - BenchModuleHeader for header
-    - SensorsModuleOptions for options
-    - Sensor cards from common/card
-  -->
   <div class="mb-6">
-    <!-- Loading state -->
     <div v-if="!props.deviceStatus" class="text-center py-8 text-gray-400">
       <div
         class="animate-spin w-8 h-8 border-2 border-gray-300 border-t-emerald-500 rounded-full mx-auto mb-4"
@@ -20,19 +8,15 @@
     </div>
 
     <template v-else-if="props.deviceStatus">
-      <!-- Header with options toggle -->
-      <BenchModuleHeader
+      <ModuleHeader
         :module-name="moduleName"
         :module-id="moduleId"
-        :zone-name="deviceStatus?.zoneName"
-        :rssi="deviceStatus?.system?.rssi" 
         :device-status="deviceStatus"
-        :formatted-uptime="formatUptime(calculatedUptime)"
         :options-panel-open="optionsPanelOpen"
+        :is-online="isOnline"
         @toggle-options="optionsPanelOpen = !optionsPanelOpen"
       />
 
-      <!-- Options Panel -->
       <SensorsModuleOptions
         :is-open="optionsPanelOpen"
         :device-status="deviceStatus"
@@ -42,7 +26,6 @@
         @open-zone-drawer="$emit('open-zone-drawer', moduleId)"
       />
 
-      <!-- Sensor Cards Grid with slide animation -->
       <div 
         class="grid gap-4 cards-transition"
         style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));"
@@ -89,16 +72,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { DeviceStatus, SensorData, SensorDataPoint } from '../../common/types'
-import BenchModuleHeader from './BenchModuleHeader.vue'
+import ModuleHeader from './ModuleHeader.vue'
 import SensorsModuleOptions from '~/features/modules/common/module-panel/SensorsModuleOptions.vue'
 import SensorDetailGraph from '../../common/card/SensorDetailGraph.vue' 
 import UnifiedSensorCard from '../../common/card/UnifiedSensorCard.vue'
-import { formatUptime } from '~/utils/time'
-import {
-  getSensorLabel,
-  getSensorColor,
-  getSensorUnit,
-} from '../../common/utils/sensors'
+import { getSensorLabel, getSensorColor, getSensorUnit } from '../../common/utils/sensors'
 import { getSensorTypeFromKey, getHardwareIdFromKey, getHardware } from '../../common/config/sensors'
 
 interface Props {
@@ -106,7 +84,6 @@ interface Props {
   moduleName: string
   deviceStatus: DeviceStatus | null
   sensorData: SensorData
-  isHistoryLoading?: boolean
 }
 
 const emit = defineEmits<{
@@ -116,10 +93,11 @@ const emit = defineEmits<{
 
 const props = withDefaults(defineProps<Props>(), {
   sensorData: () => ({}), // Now uses composite keys dynamically
-  isHistoryLoading: false,
 })
 
 const optionsPanelOpen = ref(false)
+
+const isOnline = computed(() => props.deviceStatus?.system?.online !== false)
 const selectedGraphSensor = ref<string | null>(null)
 const selectedGraphActiveSensor = ref<string | null>(null) // Active sensor from card to pre-select
 const isToggling = ref(false)
@@ -135,7 +113,6 @@ const activeSensorByGroup = reactive<Record<string, string>>({})
 const handleActiveSensorChange = (groupType: string, sensorKey: string) => {
   activeSensorByGroup[groupType] = sensorKey
 }
-
 
 // Define groups by sensor_type (the keys come from composite keys now)
 const sensorGroupsDefinition = [
@@ -173,16 +150,9 @@ const sensorHistoryMap = computed<Record<string, SensorDataPoint[]>>(() => {
   return props.sensorData
 })
 
-
-
-// ============================================================================
-// Computed: Active Groups
-// ============================================================================
-
 // Build active groups from both sensorData and deviceStatus
 const activeGroups = computed(() => {
   return sensorGroupsDefinition.map(group => {
-    // Collect all composite keys from sensorData that match this group
     // Collect all composite keys from sensorData that match this group
     const dataKeys = Object.keys(props.sensorData).filter(compositeKey => {
       const type = getSensorTypeFromKey(compositeKey)

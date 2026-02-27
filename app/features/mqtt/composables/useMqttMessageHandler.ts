@@ -9,6 +9,7 @@ export const MQTT_TOPICS = {
   SENSORS_STATUS: '/sensors/status',
   SENSORS_CONFIG: '/sensors/config',
   HARDWARE_CONFIG: '/hardware/config',
+  ONLINE: '/online',
 } as const
 
 
@@ -24,7 +25,8 @@ export function isStatusTopic(topic: string): boolean {
     topic.endsWith(MQTT_TOPICS.SYSTEM_CONFIG) ||
     topic.endsWith(MQTT_TOPICS.SENSORS_STATUS) ||
     topic.endsWith(MQTT_TOPICS.SENSORS_CONFIG) ||
-    topic.endsWith(MQTT_TOPICS.HARDWARE_CONFIG)
+    topic.endsWith(MQTT_TOPICS.HARDWARE_CONFIG) ||
+    topic.endsWith(MQTT_TOPICS.ONLINE)
   )
 }
 
@@ -152,6 +154,25 @@ export function mergeHardwareConfig(status: DeviceStatus, metadata: HardwareInfo
 }
 
 /**
+ * Merge online/offline status (from LWT) into device status
+ * @param status - Current device status
+ * @param metadata - Incoming online status {online: boolean}
+ */
+export function mergeOnlineStatus(status: DeviceStatus, metadata: { online: boolean }): void {
+  if (!status.system) status.system = {}
+  status.system.online = metadata.online
+
+  if (!metadata.online) {
+    // When device goes offline, clear bootedAt and record disconnect time
+    status.system.bootedAt = null
+    status.system.disconnectedAt = new Date().toISOString()
+  } else {
+    // When device comes back online, clear disconnectedAt
+    status.system.disconnectedAt = null
+  }
+}
+
+/**
  * Composable for handling MQTT messages with shared logic
  * Provides utilities for parsing and merging MQTT data into device status
  */
@@ -165,5 +186,6 @@ export function useMqttMessageHandler() {
     mergeSensorsStatus,
     mergeSensorsConfig,
     mergeHardwareConfig,
+    mergeOnlineStatus,
   }
 }

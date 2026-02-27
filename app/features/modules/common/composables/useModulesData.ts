@@ -29,6 +29,7 @@ export const useModulesData = () => {
     mergeSensorsStatus,
     mergeSensorsConfig,
     mergeHardwareConfig,
+    mergeOnlineStatus,
   } = useMqttMessageHandler()
 
   /**
@@ -104,6 +105,8 @@ export const useModulesData = () => {
         mergeSensorsConfig(deviceStatus, message.metadata as any)
       } else if (message.topic.endsWith(MQTT_TOPICS.HARDWARE_CONFIG)) {
         mergeHardwareConfig(deviceStatus, message.metadata as any)
+      } else if (message.topic.endsWith(MQTT_TOPICS.ONLINE)) {
+        mergeOnlineStatus(deviceStatus, message.metadata as any)
       }
 
       // Trigger reactivity

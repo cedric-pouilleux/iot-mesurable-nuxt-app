@@ -4,7 +4,7 @@
     <!-- Hardware Section -->
     <UIPanel :title="$t('modules.deviceInfo.hardware')">
       <template #options>
-        <UITooltip :text="$t('modules.deviceInfo.uptime') + ': ' + formattedUptime" position="left">
+        <UITooltip :text="statusTooltipText" position="left">
           <div 
             class="w-2.5 h-2.5 rounded-full cursor-help"
             :class="isOnline ? 'bg-green-500' : 'bg-red-500'"
@@ -81,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { Doughnut } from 'vue-chartjs'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import type { DeviceStatus } from '../types'
@@ -119,13 +119,37 @@ const formatKb = (kb: number) => {
 // Hardware info
 const hardwareModel = computed(() => props.deviceStatus?.hardware?.chip?.model || 'ESP32')
 const cpuFreq = computed(() => props.deviceStatus?.hardware?.chip?.cpuFreqMhz || '--')
-const isOnline = computed(() => props.deviceStatus?.system?.bootedAt ? true : false)
+const isOnline = computed(() => props.deviceStatus?.system?.online !== false)
+
+// Tick counter to force recomputation of time-based values every 60s
+const tick = ref(0)
+let tickInterval: ReturnType<typeof setInterval> | null = null
+onMounted(() => { tickInterval = setInterval(() => tick.value++, 60_000) })
+onUnmounted(() => { if (tickInterval) clearInterval(tickInterval) })
+
 const formattedUptime = computed(() => {
+  void tick.value
   const bootedAt = props.deviceStatus?.system?.bootedAt
   if (!bootedAt) return '--'
   const bootTime = new Date(bootedAt).getTime()
   const uptimeMs = Date.now() - bootTime
   return formatUptime(uptimeMs / 1000)
+})
+
+const formattedDowntime = computed(() => {
+  void tick.value
+  const disconnectedAt = props.deviceStatus?.system?.disconnectedAt
+  if (!disconnectedAt) return '--'
+  const disconnectTime = new Date(disconnectedAt).getTime()
+  const downtimeMs = Date.now() - disconnectTime
+  return formatUptime(downtimeMs / 1000)
+})
+
+const statusTooltipText = computed(() => {
+  if (isOnline.value) {
+    return `${t('modules.deviceInfo.uptime')}: ${formattedUptime.value}`
+  }
+  return `${t('modules.deviceInfo.downtime')}: ${formattedDowntime.value}`
 })
 
 // Network info

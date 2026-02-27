@@ -40,6 +40,7 @@
             "network": "Network",
             "memory": "Memory",
             "uptime": "Uptime",
+            "downtime": "Disconnected for",
             "signal": "Signal",
             "ip": "IP",
             "mac": "MAC",
@@ -66,6 +67,9 @@
             "associatedZone": "Associated Zone",
             "none": "No Zone",
             "admin": "Zone Administration"
+        },
+        "status": {
+            "disconnected": "Disconnected"
         }
     },
     "zones": {

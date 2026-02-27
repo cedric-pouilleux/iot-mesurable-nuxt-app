@@ -84,6 +84,10 @@ export interface SystemInfo {
   flash?: FlashInfo
   memory?: SystemMemory
   rssi?: number
+  /** Online status from LWT */
+  online?: boolean
+  /** ISO timestamp when device went offline (LWT) */
+  disconnectedAt?: string | null
 }
 
 // ============================================================================
