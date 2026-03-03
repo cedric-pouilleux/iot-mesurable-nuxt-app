@@ -29,10 +29,7 @@
               ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-medium'
               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
           "
-          @click="
-            $emit('update:modelValue', '')
-            close()
-          "
+          @click="selectSource('', close)"
         >
           <span class="flex items-center gap-2">Toutes</span>
           <Icon v-if="!modelValue" name="tabler:check" class="w-3.5 h-3.5 text-emerald-500" />
@@ -44,10 +41,7 @@
               ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-medium'
               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
           "
-          @click="
-            $emit('update:modelValue', 'SYSTEM')
-            close()
-          "
+          @click="selectSource('SYSTEM', close)"
         >
           <span class="flex items-center gap-2">
             <Icon name="tabler:settings" class="w-3.5 h-3.5 text-slate-500" />
@@ -66,10 +60,7 @@
               ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-medium'
               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
           "
-          @click="
-            $emit('update:modelValue', 'USER')
-            close()
-          "
+          @click="selectSource('USER', close)"
         >
           <span class="flex items-center gap-2">
             <Icon name="tabler:user" class="w-3.5 h-3.5 text-indigo-500" />
@@ -93,7 +84,12 @@ defineProps<{
   modelValue: '' | 'SYSTEM' | 'USER'
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   'update:modelValue': [value: '' | 'SYSTEM' | 'USER']
 }>()
+
+const selectSource = (value: '' | 'SYSTEM' | 'USER', close: () => void) => {
+  emit('update:modelValue', value)
+  close()
+}
 </script>

@@ -45,6 +45,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   label: '',
   icon: '',
+  iconClass: '',
   variant: 'gray',
   size: 'small',
   clickable: false,

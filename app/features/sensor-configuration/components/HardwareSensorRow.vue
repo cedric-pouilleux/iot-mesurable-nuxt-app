@@ -171,7 +171,7 @@ const timeAgo = useTimeAgo(() => lastUpdate.value)
 // Actions (using composable)
 // ============================================================================
 
-const { resetting, toggling, saving, resetSensor, toggleEnabled, updateInterval } =
+const { resetting, toggling, resetSensor, toggleEnabled, updateInterval } =
   useHardwareSensorActions(toRef(props, 'moduleId'))
 
 const handleToggle = async () => {

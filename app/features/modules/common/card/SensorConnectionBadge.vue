@@ -24,6 +24,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  timeSince: undefined,
   showLabel: false,
   compact: false,
 })

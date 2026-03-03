@@ -107,7 +107,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, reactive } from 'vue'
 
 const props = defineProps<{
   range: { start: string; end: string }
@@ -138,7 +138,6 @@ interface RawBucket {
 }
 
 const rawData = ref<RawBucket[]>([])
-const containerRef = ref<HTMLElement | null>(null)
 const chartRef = ref<HTMLElement | null>(null)
 
 // Drag state
@@ -168,7 +167,6 @@ const maxCount = computed(() => {
 const getCategoryOrder = () => {
   // Define consistent order based on all available categories
   // Use known categories first, then any others found in data
-  const known = Object.keys(CATEGORY_COLORS).sort()
   const found = new Set<string>()
   rawData.value.forEach(b => Object.keys(b.counts).forEach(k => found.add(k)))
   return Array.from(found).sort()
@@ -256,17 +254,7 @@ const layers = computed(() => {
   return result
 })
 
-const buckets = computed(() => {
-  return rawData.value.map((bucket, i) => {
-    const total = Object.values(bucket.counts).reduce((a, c) => a + c, 0)
-    return {
-      slot: bucket.slot,
-      total,
-      segments: [], // Not used for rendering anymore
-      counts: bucket.counts,
-    }
-  })
-})
+// Buckets logic was unused and removed
 
 const selectionRange = computed(() => {
   if (!props.selection || !rawData.value.length) return null
@@ -302,7 +290,6 @@ const selectionRange = computed(() => {
   // Find endX: last bucket whose start time is < selEnd
   for (let i = rawData.value.length - 1; i >= 0; i--) {
     const bucketStart = new Date(rawData.value[i].slot).getTime()
-    const bucketEnd = bucketStart + bucketDuration
 
     if (selEnd > bucketStart) {
       // Selection ends within or after this bucket
@@ -418,7 +405,7 @@ const onDrag = (e: MouseEvent) => {
     tooltip.time = new Date(bucket.slot).toLocaleString('fr-FR')
     tooltip.total = Object.values(bucket.counts).reduce((a, c) => a + c, 0)
     tooltip.categories = Object.entries(bucket.counts)
-      .filter(([_, count]) => count > 0)
+      .filter(([, count]) => count > 0)
       .map(([name, count]) => ({
         name,
         color: CATEGORY_COLORS[name] || '#6b7280',
@@ -432,7 +419,7 @@ const onDrag = (e: MouseEvent) => {
   }
 }
 
-const endDrag = (e: MouseEvent) => {
+const endDrag = () => {
   tooltip.show = false
 
   if (!isDragging.value || dragStart.value === null || dragEnd.value === null) {
@@ -489,8 +476,8 @@ const fetchHistogram = async () => {
 
     const data = await $fetch<RawBucket[]>(`/api/logs/histogram?${params}`)
     rawData.value = data
-  } catch (e) {
-    console.error('Failed to fetch histogram:', e)
+  } catch (error) {
+    console.error('Failed to fetch histogram:', error)
   }
 }
 

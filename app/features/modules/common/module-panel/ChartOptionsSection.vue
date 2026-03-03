@@ -83,13 +83,6 @@ const props = defineProps<{
   moduleId: string
 }>()
 
-const {
-  showCharts,
-  showThresholdLines,
-  colorThresholds,
-  showAlertThresholds,
-  minimalMode,
-  graphDuration,
-  useFixedScale,
-} = useChartSettings(props.moduleId)
+const { colorThresholds, showAlertThresholds, minimalMode, graphDuration, useFixedScale } =
+  useChartSettings(props.moduleId)
 </script>

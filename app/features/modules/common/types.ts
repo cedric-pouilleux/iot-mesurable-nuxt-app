@@ -4,6 +4,9 @@
 export interface Module {
   id: string
   name: string
+  type: string
+  category?: string
+  status: string | null
 }
 
 export interface SensorDataPoint {
@@ -98,7 +101,7 @@ export interface DeviceStatus {
   sensors?: Record<string, SensorStatus>
   sensorsConfig?: SensorsConfigData
   hardware?: HardwareInfo
-  preferences?: Record<string, any>
+  preferences?: Record<string, unknown>
   zoneName?: string | null
   moduleType?: string | null
 }

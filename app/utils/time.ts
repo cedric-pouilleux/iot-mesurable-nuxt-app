@@ -52,7 +52,7 @@ export function formatTimeAgo(date: Date | string | null | undefined): string {
     }
 
     return format(dateObj, 'HH:mm', { locale: fr })
-  } catch (error) {
+  } catch {
     return ''
   }
 }

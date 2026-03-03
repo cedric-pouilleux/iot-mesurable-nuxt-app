@@ -47,7 +47,7 @@ onMounted(() => {
   // Restore from localStorage
   if (typeof localStorage !== 'undefined') {
     const savedLocale = localStorage.getItem('i18n-locale')
-    if (savedLocale && locales.value.some((l: any) => l.code === savedLocale)) {
+    if (savedLocale && locales.value.some((l: { code: string }) => l.code === savedLocale)) {
       setLocale(savedLocale as 'fr' | 'en')
     }
   }

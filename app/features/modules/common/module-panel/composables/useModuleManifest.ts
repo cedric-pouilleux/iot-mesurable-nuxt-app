@@ -11,8 +11,8 @@ export interface ModuleManifest {
   version: string
   type?: string
   hardware: ManifestHardware[]
-  sensors: any[] // We can define strict types if needed
-  actions: any[]
+  sensors: unknown[] // We can define strict types if needed
+  actions: unknown[]
 }
 
 export function useModuleManifest(moduleType: Ref<string | undefined | null>) {

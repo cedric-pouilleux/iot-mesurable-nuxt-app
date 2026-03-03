@@ -26,10 +26,7 @@
               ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-medium'
               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
           "
-          @click="
-            $emit('update:modelValue', '')
-            close()
-          "
+          @click="selectModule('', close)"
         >
           <span class="flex items-center gap-2">Tous</span>
           <Icon v-if="!modelValue" name="tabler:check" class="w-3.5 h-3.5 text-emerald-500" />
@@ -43,10 +40,7 @@
               ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-medium'
               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
           "
-          @click="
-            $emit('update:modelValue', module.value)
-            close()
-          "
+          @click="selectModule(module.value, close)"
         >
           <span class="flex items-center gap-2">
             <Icon :name="module.icon" class="w-3.5 h-3.5" :class="module.color" />
@@ -70,7 +64,7 @@ defineProps<{
   modelValue: string
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
@@ -93,5 +87,10 @@ const modules = [
 const getModuleLabel = (value: string) => {
   const module = modules.find(m => m.value === value)
   return module ? module.label : value
+}
+
+const selectModule = (value: string, close: () => void) => {
+  emit('update:modelValue', value)
+  close()
 }
 </script>

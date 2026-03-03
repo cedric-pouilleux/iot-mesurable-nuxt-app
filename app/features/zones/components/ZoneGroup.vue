@@ -13,8 +13,13 @@
 </template>
 
 <script setup lang="ts">
-import type { ModuleGroup } from '~/pages/index.vue'
+import type { Module } from '~/features/modules/common/types'
 
+interface ModuleGroup {
+  zoneId: string | null
+  zoneName: string
+  modules: readonly Module[]
+}
 defineProps<{
   group: ModuleGroup
 }>()

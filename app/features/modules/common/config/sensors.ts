@@ -97,7 +97,8 @@ export function getSensorRange(key: string): { min: number; max: number } | null
 /**
  * Get normalization ratio (always 1, feature simplified)
  */
-export function getNormalizationRatio(_sensorKey: string): number {
+export function getNormalizationRatio(sensorKey?: string): number {
+  void sensorKey
   return 1
 }
 
@@ -153,7 +154,7 @@ export function getHardware(id: string): HardwareDefinition | undefined {
  * Get hardware that measures a specific sensor type
  */
 export function getHardwareForSensor(sensorKey: string): HardwareDefinition | undefined {
-  const entry = Object.entries(HARDWARE).find(([_, hw]) =>
+  const entry = Object.entries(HARDWARE).find(([, hw]) =>
     (hw.measures as readonly string[]).includes(sensorKey)
   )
   return entry?.[1]

@@ -9,7 +9,7 @@
         v-if="minimalMode"
         key="minimal"
         class="p-3 flex flex-col justify-start cursor-pointer"
-        @click="$emit('toggle-graph')"
+        @click="$emit('toggle-graph', activeSensorKey)"
       >
         <div class="flex items-center gap-1.5">
           <span
@@ -65,7 +65,7 @@
               <span
                 :class="[isPanelOpen ? 'text-white' : darkerValueColorClass, 'font-bold']"
                 class="text-[13px] cursor-pointer hover:opacity-80 transition-opacity"
-                @click="$emit('toggle-graph')"
+                @click="$emit('toggle-graph', activeSensorKey)"
               >
                 {{ currentTitle }}
               </span>
@@ -94,7 +94,7 @@
             :is-panel-open="isPanelOpen"
             :show-trend="shouldShowTrend"
             class="cursor-pointer hover:opacity-80 transition-opacity"
-            @click="$emit('toggle-graph')"
+            @click="$emit('toggle-graph', activeSensorKey)"
           />
 
           <!-- Threshold Alert -->
@@ -114,7 +114,7 @@
           :is-panel-open="isPanelOpen"
           :is-loading="isLoading"
           :graph-duration="graphDuration"
-          @maximize="$emit('toggle-graph')"
+          @maximize="$emit('toggle-graph', activeSensorKey)"
         />
       </div>
     </Transition>
@@ -162,9 +162,9 @@ interface Props {
   moduleId: string
   color: string
   isLoading?: boolean
-  initialActiveSensorKey?: string
   graphDuration?: string
   isPanelOpen?: boolean
+  initialActiveSensorKey?: string
 }
 
 // ============================================================================
@@ -175,10 +175,11 @@ const props = withDefaults(defineProps<Props>(), {
   isLoading: false,
   graphDuration: '24h',
   isPanelOpen: false,
+  initialActiveSensorKey: '',
 })
 
 const emit = defineEmits<{
-  'toggle-graph': []
+  'toggle-graph': [activeKey: string]
   'update:active-sensor': [key: string]
   'open-options': []
 }>()
@@ -187,13 +188,9 @@ const emit = defineEmits<{
 // Color Classes (from composable)
 // ============================================================================
 
-const {
-  valueColorClass,
-  lightValueColorClass,
-  darkerValueColorClass,
-  openBgClass,
-  hoverShadowColor,
-} = useCardColors(computed(() => props.color))
+const { valueColorClass, lightValueColorClass, darkerValueColorClass, openBgClass } = useCardColors(
+  computed(() => props.color)
+)
 
 // ============================================================================
 // Chart & Threshold Settings

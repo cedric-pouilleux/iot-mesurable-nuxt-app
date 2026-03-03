@@ -89,7 +89,11 @@ const close = () => {
 }
 
 const toggle = () => {
-  isOpen.value ? close() : open()
+  if (isOpen.value) {
+    close()
+  } else {
+    open()
+  }
 }
 
 // Click Outside Logic

@@ -33,32 +33,28 @@
 <script setup lang="ts">
 import type { MqttMessage } from '../types'
 import ZoneDrawer from '~/features/zones/components/ZoneDrawer.vue'
-import { useDatabase } from '~/features/modules/common/composables/useDatabase'
 import { useModules, useModulesData } from '~/features/modules/common/composables'
-import { useDashboard } from '~/composables/useDashboard'
 import { useMqtt } from '~/features/mqtt/composables/useMqtt'
 import { useZones } from '~/features/zones/composables/useZones'
 
 import Module from '~/features/modules/Module.vue'
 import ZoneGroup from '~/features/zones/components/ZoneGroup.vue'
+import type { Module as ModuleType } from '~/features/modules/common/types'
 
 export interface ModuleZones {
   zoneId: string | null
   zoneName: string
-  modules: typeof modules.value
+  modules: ModuleType[]
 }
 
-const { loadDbSize } = useDatabase()
 const { zones, fetchZones } = useZones()
 const { t } = useI18n()
 const { modules, error: modulesError, loadModules, addModuleFromTopic } = useModules()
 const { handleModuleMessage, initializeModuleWithType } = useModulesData()
 
-const { error: dashboardError } = useDashboard()
-
 const isInitialLoading = ref(true)
 const isLoading = computed(() => isInitialLoading.value)
-const error = computed(() => modulesError.value || dashboardError.value)
+const error = computed(() => modulesError.value)
 
 const isZoneDrawerOpen = ref(false)
 
@@ -129,7 +125,7 @@ const { connect: connectMqtt, disconnect: disconnectMqtt } = useMqtt({
 
 onMounted(async () => {
   isInitialLoading.value = true
-  await Promise.all([loadModules(), fetchZones(), loadDbSize()])
+  await Promise.all([loadModules(), fetchZones()])
 
   // Initialize moduleType for each module from API /modules response
   // This ensures moduleType is available even if /status endpoint fails

@@ -17,9 +17,9 @@ export function useLogs() {
 
   const filters = ref<LogFilters>({
     categories: getQueryArray(route.query.category),
-    source: (route.query.source as any) || '',
-    direction: (route.query.direction as any) || '',
-    levels: getQueryArray(route.query.level) as any,
+    source: (route.query.source as '' | 'SYSTEM' | 'USER') || '',
+    direction: (route.query.direction as '' | 'IN' | 'OUT') || '',
+    levels: getQueryArray(route.query.level),
     search: (route.query.search as string) || '',
     limit: (route.query.limit as string) || '100',
     moduleId: (route.query.moduleId as string) || '',

@@ -6,6 +6,7 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
+  "files.eol": "\n",
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact", "vue"],
   "[vue]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"

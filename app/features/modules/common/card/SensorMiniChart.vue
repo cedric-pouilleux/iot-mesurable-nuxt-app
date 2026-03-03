@@ -186,8 +186,9 @@ const chartData = computed<ChartData<'line'> | null>(() => {
         fill: false,
         pointRadius: 0,
         segment: {
-          borderDash: (ctx: any) => (gapIndices.has(ctx.p0DataIndex) ? [4, 4] : undefined),
-          borderColor: (ctx: any) => {
+          borderDash: (ctx: { p0DataIndex: number }) =>
+            gapIndices.has(ctx.p0DataIndex) ? [4, 4] : undefined,
+          borderColor: (ctx: { p0DataIndex: number; p1DataIndex: number }) => {
             if (gapIndices.has(ctx.p0DataIndex)) {
               return hexToRgba(strokeColor.value, 0.3)
             }
@@ -206,37 +207,69 @@ const chartData = computed<ChartData<'line'> | null>(() => {
 
 // Chart options
 const chartOptions = computed<ChartOptions<'line'>>(() => {
-  const annotations: Record<string, any> = {}
+  const plugins: Record<string, unknown> = {
+    legend: { display: false },
+    tooltip: {
+      enabled: true,
+      backgroundColor: '#111827',
+      bodyColor: '#fff',
+      padding: 8,
+      cornerRadius: 6,
+      displayColors: false,
+      titleFont: { size: 10, weight: 'normal' as const },
+      bodyFont: { size: 12, weight: 'bold' as const },
+      filter: (tooltipItem: { dataset: { label: string } }) => tooltipItem.dataset.label !== '',
+      callbacks: {
+        title: (items: { parsed: { x: number } }[]) => {
+          const date = new Date(items[0].parsed.x)
+          return date.toLocaleString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        },
+        label: (item: { parsed: { y: unknown } }) => {
+          const val = item.parsed.y
+          return typeof val === 'number' ? val.toFixed(1) : ''
+        },
+      },
+    },
+  }
 
   if (showThresholdLines.value) {
     const thresholds = getThresholdDefinition(props.sensorKey)
     if (thresholds) {
-      annotations.moderateLine = {
-        type: 'line',
-        yMin: thresholds.good,
-        yMax: thresholds.good,
-        borderColor: 'rgba(245, 158, 11, 0.6)',
-        borderWidth: 1,
-        borderDash: [4, 4],
-        label: { display: false },
-      }
-      annotations.poorLine = {
-        type: 'line',
-        yMin: thresholds.moderate,
-        yMax: thresholds.moderate,
-        borderColor: 'rgba(249, 115, 22, 0.6)',
-        borderWidth: 1,
-        borderDash: [4, 4],
-        label: { display: false },
-      }
-      annotations.hazardousLine = {
-        type: 'line',
-        yMin: thresholds.poor,
-        yMax: thresholds.poor,
-        borderColor: 'rgba(239, 68, 68, 0.6)',
-        borderWidth: 1,
-        borderDash: [4, 4],
-        label: { display: false },
+      plugins.annotation = {
+        annotations: {
+          moderateLine: {
+            type: 'line',
+            yMin: thresholds.good,
+            yMax: thresholds.good,
+            borderColor: 'rgba(245, 158, 11, 0.6)',
+            borderWidth: 1,
+            borderDash: [4, 4],
+            label: { display: false },
+          },
+          poorLine: {
+            type: 'line',
+            yMin: thresholds.moderate,
+            yMax: thresholds.moderate,
+            borderColor: 'rgba(249, 115, 22, 0.6)',
+            borderWidth: 1,
+            borderDash: [4, 4],
+            label: { display: false },
+          },
+          hazardousLine: {
+            type: 'line',
+            yMin: thresholds.poor,
+            yMax: thresholds.poor,
+            borderColor: 'rgba(239, 68, 68, 0.6)',
+            borderWidth: 1,
+            borderDash: [4, 4],
+            label: { display: false },
+          },
+        },
       }
     }
   }
@@ -258,36 +291,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => {
           : {}),
       },
     },
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        enabled: true,
-        backgroundColor: '#111827',
-        bodyColor: '#fff',
-        padding: 8,
-        cornerRadius: 6,
-        displayColors: false,
-        titleFont: { size: 10, weight: 'normal' as const },
-        bodyFont: { size: 12, weight: 'bold' as const },
-        filter: (tooltipItem: any) => tooltipItem.dataset.label !== '',
-        callbacks: {
-          title: (items: any[]) => {
-            const date = new Date(items[0].parsed.x)
-            return date.toLocaleString('fr-FR', {
-              day: '2-digit',
-              month: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit',
-            })
-          },
-          label: (item: any) => {
-            const val = item.parsed.y
-            return typeof val === 'number' ? val.toFixed(1) : ''
-          },
-        },
-      },
-      annotation: { annotations },
-    },
+    plugins,
   }
 })
 </script>

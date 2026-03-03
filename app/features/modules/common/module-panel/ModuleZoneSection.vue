@@ -35,8 +35,6 @@ import UIButton from '~/components/design-system/UIButton/UIButton.vue'
 import UISelect from '~/components/design-system/UISelect/UISelect.vue'
 import UIPanel from '~/components/design-system/UIPanel/UIPanel.vue'
 
-const { t } = useI18n()
-
 const props = defineProps<{
   moduleId: string
 }>()
