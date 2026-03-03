@@ -33,6 +33,7 @@ sensor-configuration/
 ### 1. Visualisation de l'état des capteurs
 
 Chaque capteur affiche :
+
 - **Statut** : Indicateur visuel (vert = OK, rouge = manquant, gris = inconnu)
 - **Nom du capteur** : Ex. BME280, SCD41, SGP40
 - **Mesures** : Badges colorés pour chaque type de mesure (CO2, VOC, Température, Humidité)
@@ -47,6 +48,7 @@ Chaque capteur affiche :
 ### 3. Calcul de statut intelligent
 
 Le statut est calculé dynamiquement en fonction :
+
 - Du dernier timestamp reçu
 - De l'intervalle configuré
 - D'une période de grâce de 10 secondes
@@ -62,17 +64,19 @@ Exemple : avec un intervalle de 60s, le capteur est considéré "missing" après
 Résout l'historique des données de capteur avec fallback automatique.
 
 **Stratégie de résolution** :
+
 1. Essaie la clé composite : `{hardwareKey}:{measureKey}` (ex: `BME280:temperature`)
 2. Si non trouvée, fallback vers la clé simple : `{measureKey}` (ex: `temperature`)
 3. Si la clé contient déjà `:`, pas de fallback
 
 **Utilisation** :
+
 ```typescript
 import { useHardwareSensorHistory } from '~/features/sensor-configuration/composables/useHardwareSensorHistory'
 
 const { history, lastUpdate } = useHardwareSensorHistory(
-  toRef(hardware, 'hardwareKey'),  // Ex: 'BME280'
-  measureKeyRef,                    // Ex: 'temperature'
+  toRef(hardware, 'hardwareKey'), // Ex: 'BME280'
+  measureKeyRef, // Ex: 'temperature'
   sensorHistoryMapRef
 )
 
@@ -89,12 +93,17 @@ const { history, lastUpdate } = useHardwareSensorHistory(
 Centralise toutes les actions API avec gestion d'état de chargement.
 
 **Utilisation** :
+
 ```typescript
 import { useHardwareSensorActions } from '~/features/sensor-configuration/composables/useHardwareSensorActions'
 
-const { 
-  resetting, toggling, saving,           // États de chargement
-  resetSensor, toggleEnabled, updateInterval  // Actions
+const {
+  resetting,
+  toggling,
+  saving, // États de chargement
+  resetSensor,
+  toggleEnabled,
+  updateInterval, // Actions
 } = useHardwareSensorActions(toRef(props, 'moduleId'))
 
 // Reset d'un capteur
@@ -108,6 +117,7 @@ await updateInterval('BME280', 60)
 ```
 
 **Avantages** :
+
 - ✅ Gestion automatique des notifications (snackbar)
 - ✅ États de chargement pour l'UI
 - ✅ Gestion centralisée des erreurs
@@ -124,9 +134,9 @@ Fonctions pures pour calculer le statut des capteurs.
 import { calculateSensorStatus } from '~/features/sensor-configuration/utils/status-calculator'
 
 const status = calculateSensorStatus(
-  lastUpdate,      // Date | string | null
+  lastUpdate, // Date | string | null
   intervalSeconds, // number
-  Date.now()      // timestamp actuel (optionnel)
+  Date.now() // timestamp actuel (optionnel)
 )
 // Retourne : 'ok' | 'missing' | 'unknown'
 ```
@@ -140,17 +150,17 @@ const status = calculateSensorStatus(
 Fonctions pures pour l'affichage des statuts.
 
 ```typescript
-import { 
-  getStatusClass,      // Classes CSS pour le dot
-  getStatusTextClass,  // Classes CSS pour le texte
-  getStatusLabel,      // Label lisible
-  getMeasurementVariant // Variant pour UITag
+import {
+  getStatusClass, // Classes CSS pour le dot
+  getStatusTextClass, // Classes CSS pour le texte
+  getStatusLabel, // Label lisible
+  getMeasurementVariant, // Variant pour UITag
 } from '~/features/sensor-configuration/utils/status-helpers'
 
-const dotClass = getStatusClass('ok')        // 'bg-green-500'
-const textClass = getStatusTextClass('ok')   // 'text-gray-700 dark:text-gray-200'
-const label = getStatusLabel('ok')           // 'OK'
-const variant = getMeasurementVariant('ok')  // 'success'
+const dotClass = getStatusClass('ok') // 'bg-green-500'
+const textClass = getStatusTextClass('ok') // 'text-gray-700 dark:text-gray-200'
+const label = getStatusLabel('ok') // 'OK'
+const variant = getMeasurementVariant('ok') // 'success'
 ```
 
 **Tests** : 16 cas couverts (tous les statuts × toutes les fonctions)
@@ -164,21 +174,24 @@ const variant = getMeasurementVariant('ok')  // 'success'
 **Composant principal** pour afficher une ligne de capteur.
 
 **Props** :
+
 ```typescript
 interface Props {
-  hardware: HardwareData      // Données du capteur
-  moduleId: string            // ID du module
+  hardware: HardwareData // Données du capteur
+  moduleId: string // ID du module
   sensorHistoryMap?: Record<string, SensorDataPoint[]>
 }
 ```
 
 **Events** :
+
 ```typescript
 emit('interval-change', hardwareKey: string, interval: number)
 emit('enabled-change', hardwareKey: string, enabled: boolean)
 ```
 
 **Utilisation** :
+
 ```vue
 <HardwareSensorRow
   :hardware="sensorData"
@@ -196,6 +209,7 @@ emit('enabled-change', hardwareKey: string, enabled: boolean)
 Affiche l'indicateur de statut visuel.
 
 **Props** :
+
 ```typescript
 interface Props {
   status: 'ok' | 'missing' | 'unknown'
@@ -204,6 +218,7 @@ interface Props {
 ```
 
 **Rendu** :
+
 - Disabled → Carré rouge
 - Unknown → Spinner gris
 - OK → Dot vert
@@ -216,6 +231,7 @@ interface Props {
 Affiche les badges de mesures.
 
 **Props** :
+
 ```typescript
 interface Props {
   measurements: Measurement[]
@@ -230,6 +246,7 @@ interface Props {
 Boutons d'action (toggle, reset).
 
 **Props** :
+
 ```typescript
 interface Props {
   isEnabled: boolean
@@ -239,6 +256,7 @@ interface Props {
 ```
 
 **Events** :
+
 ```typescript
 emit('toggle')
 emit('reset')
@@ -296,6 +314,7 @@ npm run test:run -- --coverage
 5. **Isolation** : pas d'appels API réels (mock si nécessaire)
 
 **Exemple de nouveau test** :
+
 ```typescript
 // monComposable.test.ts
 import { describe, it, expect } from 'vitest'
@@ -329,13 +348,13 @@ graph TD
     B --> E[SensorStatusIndicator]
     B --> F[SensorMeasurementBadges]
     B --> G[SensorActionButtons]
-    
+
     C --> H[sensorHistoryMap]
     D --> I[sensor-config.service]
-    
+
     I --> J[Backend API]
     J --> K[ESP32 Device]
-    
+
     K --> L[MQTT]
     L --> M[Backend]
     M --> N[WebSocket]
@@ -343,6 +362,7 @@ graph TD
 ```
 
 **Flux** :
+
 1. Le backend reçoit des données MQTT de l'ESP32
 2. Les données sont diffusées via WebSocket
 3. `SensorConfigSection` met à jour `sensorHistoryMap`
@@ -381,10 +401,7 @@ graph TD
 
 ```typescript
 // 1. Ajouter la fonction dans sensor-config.service.ts
-export async function nouvelleAction(
-  moduleId: string,
-  param: string
-): Promise<boolean> {
+export async function nouvelleAction(moduleId: string, param: string): Promise<boolean> {
   // Implementation
 }
 
@@ -396,7 +413,7 @@ const nouvelleAction = async (param: string) => {
 // 3. Exposer dans le return du composable
 return {
   // ...existing
-  nouvelleAction
+  nouvelleAction,
 }
 
 // 4. Utiliser dans le composant

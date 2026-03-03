@@ -3,7 +3,7 @@
  * Uses canonical sensor keys from config/sensors.ts
  */
 
-import { getSensor, type SensorKey, SENSORS } from '../config/sensors'
+import { getSensor, type SensorKey } from '../config/sensors'
 
 /**
  * Type pour les types de capteurs supportés (12 canonical keys)

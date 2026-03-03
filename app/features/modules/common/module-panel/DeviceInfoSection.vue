@@ -97,9 +97,9 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { Doughnut } from 'vue-chartjs'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
-import type { DeviceStatus } from '../types'
 import UITooltip from '~/components/design-system/UITooltip/UITooltip.vue'
 import UIPanel from '~/components/design-system/UIPanel/UIPanel.vue'
+import { useModuleContext } from '../composables/useModuleContext'
 
 if (process.client) {
   ChartJS.register(ArcElement, Tooltip, Legend)
@@ -107,16 +107,13 @@ if (process.client) {
 
 const { t } = useI18n()
 
-interface Props {
-  deviceStatus: DeviceStatus | null
-  moduleId: string
-}
+const { deviceStatus, moduleId } = useModuleContext()
 
-const props = defineProps<Props>()
+console.log(deviceStatus.value)
 
 const hasData = computed(() => {
-  const hasRam = (props.deviceStatus?.system?.memory?.heapTotalKb || 0) > 0
-  const hasFlash = (props.deviceStatus?.hardware?.chip?.flashKb || 0) > 0
+  const hasRam = (deviceStatus.value?.system?.memory?.heapTotalKb || 0) > 0
+  const hasFlash = (deviceStatus.value?.hardware?.chip?.flashKb || 0) > 0
   return hasRam && hasFlash
 })
 
@@ -130,9 +127,9 @@ const formatKb = (kb: number) => {
 }
 
 // Hardware info
-const hardwareModel = computed(() => props.deviceStatus?.hardware?.chip?.model || 'ESP32')
-const cpuFreq = computed(() => props.deviceStatus?.hardware?.chip?.cpuFreqMhz || '--')
-const isOnline = computed(() => props.deviceStatus?.system?.online !== false)
+const hardwareModel = computed(() => deviceStatus.value?.hardware?.chip?.model || 'ESP32')
+const cpuFreq = computed(() => deviceStatus.value?.hardware?.chip?.cpuFreqMhz || '--')
+const isOnline = computed(() => deviceStatus.value?.system?.online !== false)
 
 // Tick counter to force recomputation of time-based values every 60s
 const tick = ref(0)
@@ -146,7 +143,7 @@ onUnmounted(() => {
 
 const formattedUptime = computed(() => {
   void tick.value
-  const bootedAt = props.deviceStatus?.system?.bootedAt
+  const bootedAt = deviceStatus.value?.system?.bootedAt
   if (!bootedAt) return '--'
   const bootTime = new Date(bootedAt).getTime()
   const uptimeMs = Date.now() - bootTime
@@ -155,7 +152,7 @@ const formattedUptime = computed(() => {
 
 const formattedDowntime = computed(() => {
   void tick.value
-  const disconnectedAt = props.deviceStatus?.system?.disconnectedAt
+  const disconnectedAt = deviceStatus.value?.system?.disconnectedAt
   if (!disconnectedAt) return '--'
   const disconnectTime = new Date(disconnectedAt).getTime()
   const downtimeMs = Date.now() - disconnectTime
@@ -170,9 +167,9 @@ const statusTooltipText = computed(() => {
 })
 
 // Network info
-const rssi = computed(() => props.deviceStatus?.system?.rssi)
-const ip = computed(() => props.deviceStatus?.system?.ip)
-const mac = computed(() => props.deviceStatus?.system?.mac)
+const rssi = computed(() => deviceStatus.value?.system?.rssi)
+const ip = computed(() => deviceStatus.value?.system?.ip)
+const mac = computed(() => deviceStatus.value?.system?.mac)
 
 const rssiClass = computed(() => {
   if (!rssi.value) return 'text-gray-400'
@@ -184,13 +181,13 @@ const rssiClass = computed(() => {
 
 // Memory calculations
 const flashPercentages = computed(() => {
-  const total = props.deviceStatus?.hardware?.chip?.flashKb || 0
-  const used = props.deviceStatus?.system?.flash?.usedKb || 0
-  const free = props.deviceStatus?.system?.flash?.freeKb || 0
+  const total = deviceStatus.value?.hardware?.chip?.flashKb || 0
+  const used = deviceStatus.value?.system?.flash?.usedKb || 0
+  const free = deviceStatus.value?.system?.flash?.freeKb || 0
 
   // If system is reported as 0, calculate it as the remainder (Total - Used - Free)
   // This ensures the "System" (Yellow) slice takes the "gap" instead of "Free" (Grey)
-  let system = props.deviceStatus?.system?.flash?.systemKb || 0
+  let system = deviceStatus.value?.system?.flash?.systemKb || 0
   if (total > 0 && system === 0) {
     system = Math.max(0, total - used - free)
   }
@@ -210,8 +207,8 @@ const flashPercentages = computed(() => {
 })
 
 const ramPercentages = computed(() => {
-  const total = props.deviceStatus?.system?.memory?.heapTotalKb || 0
-  const free = props.deviceStatus?.system?.memory?.heapFreeKb || 0
+  const total = deviceStatus.value?.system?.memory?.heapTotalKb || 0
+  const free = deviceStatus.value?.system?.memory?.heapFreeKb || 0
   const used = total - free
 
   if (total === 0) return { usedPercent: 0, freePercent: 100, usedKb: 0, freeKb: 0 }
@@ -229,6 +226,7 @@ const ramPercentages = computed(() => {
 // Since 't' is available in setup scope, we can use it, BUT chartoptions object is defining external handler reference.
 // We must wrap it or make it reactive to locale changes if possible.
 // For now, simpler: use translated LABELS in datasets so we can read them back from tooltip item.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const externalTooltipHandler = (context: any) => {
   // Tooltip Element
   let tooltipEl = document.getElementById('chartjs-tooltip')

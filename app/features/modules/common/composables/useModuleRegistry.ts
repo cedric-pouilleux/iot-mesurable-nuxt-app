@@ -61,7 +61,7 @@ export const useModuleRegistry = () => {
   const fetchModuleTypes = async (): Promise<ModuleTypeSummary[]> => {
     try {
       return await $fetch<ModuleTypeSummary[]>('/api/modules/types')
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Failed to fetch module types:', e)
       return []
     }
@@ -83,7 +83,7 @@ export const useModuleRegistry = () => {
       const manifest = await $fetch<ModuleManifest>(`/api/modules/types/${moduleType}/manifest`)
       manifests.value.set(moduleType, manifest)
       return manifest
-    } catch (e: any) {
+    } catch (e: unknown) {
       error.value = `Failed to load manifest for ${moduleType}`
       console.error(error.value, e)
       return null

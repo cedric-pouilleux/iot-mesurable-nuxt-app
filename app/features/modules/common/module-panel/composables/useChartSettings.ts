@@ -1,4 +1,4 @@
-import { ref, watch, computed, readonly, toValue, type Ref, type MaybeRef } from 'vue'
+import { ref, watch, computed, readonly, toValue, type MaybeRef } from 'vue'
 
 const STORAGE_KEY_PREFIX = 'iot-chart-settings-'
 
@@ -108,8 +108,6 @@ export function useChartSettings(moduleIdInput: MaybeRef<string> = 'global') {
     },
   })
 
-  // ... (other setters)
-
   return {
     showCharts,
     // ...
@@ -122,7 +120,6 @@ export function useChartSettings(moduleIdInput: MaybeRef<string> = 'global') {
       },
     }),
 
-    // Default immediate exports ...
     showThresholdLines: computed(() => false),
     colorThresholds: computed({
       get: () => settings.value.colorThresholds,
@@ -168,7 +165,6 @@ export function useChartSettings(moduleIdInput: MaybeRef<string> = 'global') {
       saveSettings()
     },
 
-    // EXPOSE DEBOUNCED VALUES FOR CHARTS
     debouncedGraphDuration: readonly(debouncedGraphDuration),
     debouncedColorThresholds: readonly(debouncedColorThresholds),
     debouncedUseFixedScale: readonly(debouncedUseFixedScale),

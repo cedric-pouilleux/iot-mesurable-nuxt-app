@@ -118,7 +118,7 @@ export function useDeviceHealth(moduleId: Ref<string> | string): UseDeviceHealth
         })
 
       await entry.refreshPromise
-    } catch (e) {
+    } catch {
       // Error already handled in promise chain
     }
   }

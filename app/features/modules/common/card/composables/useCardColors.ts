@@ -5,9 +5,6 @@
  * Maps color names to Tailwind classes for consistent theming.
  */
 import { computed, type ComputedRef } from 'vue'
-
-type CardColor = 'emerald' | 'orange' | 'amber' | 'blue' | 'violet' | 'pink' | 'cyan' | 'gray'
-
 interface CardColorClasses {
   // Text colors
   valueColorClass: ComputedRef<string>

@@ -1,6 +1,5 @@
 import type { DeviceStatus, SensorData, SensorDataPoint } from '../types'
 import type { MqttMessage } from '~/types'
-import { processSensorData } from '~/utils/data-processing'
 import { useMqttMessageHandler } from '~/features/mqtt/composables/useMqttMessageHandler'
 import { matchTopic } from '../config/sensors'
 
@@ -96,17 +95,26 @@ export const useModulesData = () => {
     // Handle status/config messages
     if (isStatusTopic(message.topic) && message.metadata) {
       if (message.topic.endsWith(MQTT_TOPICS.SYSTEM)) {
-        mergeSystemData(deviceStatus, message.metadata as any)
+        mergeSystemData(deviceStatus, message.metadata as Parameters<typeof mergeSystemData>[1])
       } else if (message.topic.endsWith(MQTT_TOPICS.SYSTEM_CONFIG)) {
-        mergeSystemConfig(deviceStatus, message.metadata as any)
+        mergeSystemConfig(deviceStatus, message.metadata as Parameters<typeof mergeSystemConfig>[1])
       } else if (message.topic.endsWith(MQTT_TOPICS.SENSORS_STATUS)) {
-        mergeSensorsStatus(deviceStatus, message.metadata as any)
+        mergeSensorsStatus(
+          deviceStatus,
+          message.metadata as Parameters<typeof mergeSensorsStatus>[1]
+        )
       } else if (message.topic.endsWith(MQTT_TOPICS.SENSORS_CONFIG)) {
-        mergeSensorsConfig(deviceStatus, message.metadata as any)
+        mergeSensorsConfig(
+          deviceStatus,
+          message.metadata as Parameters<typeof mergeSensorsConfig>[1]
+        )
       } else if (message.topic.endsWith(MQTT_TOPICS.HARDWARE_CONFIG)) {
-        mergeHardwareConfig(deviceStatus, message.metadata as any)
+        mergeHardwareConfig(
+          deviceStatus,
+          message.metadata as Parameters<typeof mergeHardwareConfig>[1]
+        )
       } else if (message.topic.endsWith(MQTT_TOPICS.ONLINE)) {
-        mergeOnlineStatus(deviceStatus, message.metadata as any)
+        mergeOnlineStatus(deviceStatus, message.metadata as Parameters<typeof mergeOnlineStatus>[1])
       }
 
       // Trigger reactivity
@@ -161,100 +169,6 @@ export const useModulesData = () => {
   }
 
   /**
-   * Merge sensor data without duplicates based on timestamp
-   * Priorité aux données temps réel (existing) pour les timestamps proches
-   */
-  const mergeSensorData = (
-    existing: SensorDataPoint[],
-    incoming: SensorDataPoint[]
-  ): SensorDataPoint[] => {
-    const timeMap = new Map<number, SensorDataPoint>()
-    const TOLERANCE_MS = 1000 // 1 seconde de tolérance pour considérer deux points comme identiques
-
-    // Add existing data first (priority to recent WebSocket data)
-    existing.forEach(point => {
-      const timeKey = point.time.getTime()
-      // Round to nearest second for grouping (to handle timestamp differences)
-      const roundedTime = Math.round(timeKey / TOLERANCE_MS) * TOLERANCE_MS
-
-      // Keep the most recent point for this rounded timestamp
-      const existingPoint = timeMap.get(roundedTime)
-      if (!existingPoint || point.time.getTime() > existingPoint.time.getTime()) {
-        timeMap.set(roundedTime, point)
-      }
-    })
-
-    // Add incoming historical data (don't overwrite existing if within tolerance)
-    incoming.forEach(point => {
-      const timeKey = point.time.getTime()
-      const roundedTime = Math.round(timeKey / TOLERANCE_MS) * TOLERANCE_MS
-
-      // Only add if no existing point is close (within tolerance)
-      if (!timeMap.has(roundedTime)) {
-        timeMap.set(roundedTime, point)
-      }
-    })
-
-    // Convert to array, sort by time, limit size
-    return Array.from(timeMap.values())
-      .sort((a, b) => a.time.getTime() - b.time.getTime())
-      .slice(-MAX_DATA_POINTS)
-  }
-
-  /**
-   * Load dashboard data for a module (from API)
-   */
-  const loadModuleDashboard = (
-    moduleId: string,
-    dashboardData: { status: DeviceStatus | null; sensors: any }
-  ): void => {
-    initializeModule(moduleId)
-
-    // Merge device status
-    if (dashboardData.status) {
-      const existingStatus = modulesDeviceStatus.value.get(moduleId)!
-
-      modulesDeviceStatus.value.set(moduleId, {
-        ...existingStatus,
-        ...dashboardData.status,
-        // Preserve moduleType from existing if not in new status
-        moduleType: dashboardData.status.moduleType || existingStatus.moduleType,
-        system: { ...existingStatus.system, ...dashboardData.status.system },
-        sensors: { ...existingStatus.sensors, ...dashboardData.status.sensors },
-        sensorsConfig: { ...existingStatus.sensorsConfig, ...dashboardData.status.sensorsConfig },
-        hardware: { ...existingStatus.hardware, ...dashboardData.status.hardware },
-      })
-      updateVersion.value++
-    }
-
-    // Merge sensor data
-    if (dashboardData.sensors) {
-      const existingData = modulesSensorData.value.get(moduleId)!
-      const newData: SensorData = {}
-
-      // Process each sensor in the dashboard data
-      Object.entries(dashboardData.sensors).forEach(([key, values]) => {
-        // Validation: verify if it's a known sensor (optional, but good for safety)
-        // if (!sensorRegistry.get(key)) return
-
-        // Ensure values is an array
-        if (Array.isArray(values)) {
-          newData[key] = processSensorData(values) as SensorDataPoint[]
-        }
-      })
-
-      const mergedData: SensorData = { ...existingData }
-
-      Object.entries(newData).forEach(([key, points]) => {
-        mergedData[key] = mergeSensorData(existingData[key] || [], points)
-      })
-
-      modulesSensorData.value.set(moduleId, mergedData)
-      updateVersion.value++
-    }
-  }
-
-  /**
    * Update only sensor data for a module (replaces existing data)
    * Used when changing time range without reloading status
    */
@@ -270,7 +184,6 @@ export const useModulesData = () => {
     getModuleDeviceStatus,
     getModuleSensorData,
     handleModuleMessage,
-    loadModuleDashboard,
     updateModuleSensorData,
     initializeModuleWithType,
   }

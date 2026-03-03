@@ -29,6 +29,7 @@ const props = withDefaults(
     light?: boolean
   }>(),
   {
+    label: '',
     variant: 'neutral',
     size: 'xs',
     clickable: false,

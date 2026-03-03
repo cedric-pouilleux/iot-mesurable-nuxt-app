@@ -10,7 +10,7 @@ export function useTimeAgo(date: () => Date | string | null | undefined) {
   let interval: ReturnType<typeof setInterval> | null = null
 
   const timeAgo = computed(() => {
-    now.value // Utiliser now pour déclencher la réactivité
+    void now.value // Utiliser now pour déclencher la réactivité
     const dateValue = date()
     if (!dateValue) return ''
     return formatTimeAgo(dateValue)

@@ -1,5 +1,3 @@
-import type { SensorProjection } from '../types/sensor-configuration.types'
-
 /**
  * Service for managing sensor projections (user preferences)
  * This is NOT a composable - it's just plain async functions
@@ -14,11 +12,6 @@ export async function updateSensorProjection(
   sensorType: string
 ): Promise<boolean> {
   try {
-    const projection: SensorProjection = {
-      slotName,
-      sensorType,
-    }
-
     const response = await fetch(`/api/modules/${moduleId}/preferences`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },

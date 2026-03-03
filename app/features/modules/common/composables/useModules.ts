@@ -23,7 +23,7 @@ export const useModules = () => {
     // New format: mesurable/{chipId}/{subtopic}/...
     if (topicParts.length < 3 || topicParts[0] !== 'mesurable') return null
 
-    const chipId = topicParts[1]
+    // chipId extracted but unused
 
     // DISABLED: Automatic module addition from MQTT topics
     // We rely solely on the API (which uses chipId as module_id) as the source of truth.

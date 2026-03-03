@@ -48,6 +48,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  value: undefined,
   isPanelOpen: false,
   showTrend: true,
 })

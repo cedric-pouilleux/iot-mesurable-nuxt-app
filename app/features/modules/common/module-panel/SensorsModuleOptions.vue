@@ -2,18 +2,16 @@
   <div class="options-wrapper" :class="{ 'is-open': isOpen }">
     <div class="options-content">
       <div class="grid grid-cols-6 gap-4 mb-5 items-stretch">
-        <DeviceInfoSection :device-status="deviceStatus" :module-id="moduleId" />
-        <ModuleConfigurationSection
-          :module-id="moduleId"
-          @open-zone-drawer="$emit('open-zone-drawer')"
-          @zone-changed="$emit('zone-changed')"
-        />
-        <SensorConfigSection
-          :device-status="deviceStatus"
-          :module-id="moduleId"
-          :sensor-history-map="sensorHistoryMap"
-          :db-size="dbSize"
-        />
+        <DeviceInfoSection />
+        <div class="col-span-6 md:col-span-3 lg:col-span-2 flex flex-col gap-3 justify-between">
+          <ModuleZoneSection
+            :module-id="moduleId"
+            @open-zone-drawer="$emit('open-zone-drawer')"
+            @zone-changed="$emit('zone-changed')"
+          />
+          <ChartOptionsSection :module-id="moduleId" />
+        </div>
+        <SensorConfigSection :db-size="dbSize" />
       </div>
     </div>
   </div>
@@ -21,22 +19,20 @@
 
 <script setup lang="ts">
 import { watch } from 'vue'
-import type { DeviceStatus, SensorDataPoint } from '../types'
 import DeviceInfoSection from './DeviceInfoSection.vue'
-import ModuleConfigurationSection from './ModuleConfigurationSection.vue'
+import ModuleZoneSection from './ModuleZoneSection.vue'
+import ChartOptionsSection from './ChartOptionsSection.vue'
 import SensorConfigSection from '~/features/sensor-configuration/components/SensorConfigSection.vue'
 import { useDatabase } from '~/features/modules/common/composables/useDatabase'
 
 interface Props {
   isOpen: boolean
   moduleId: string
-  deviceStatus: DeviceStatus | null
-  sensorHistoryMap?: Record<string, SensorDataPoint[]>
 }
 
 const props = defineProps<Props>()
 
-const emit = defineEmits<{
+defineEmits<{
   'toggle-zone': [zoneId: string]
   'open-zone-drawer': []
   'zone-changed': []

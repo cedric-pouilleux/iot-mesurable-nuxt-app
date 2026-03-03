@@ -28,10 +28,7 @@
               ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-medium'
               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
           "
-          @click="
-            $emit('update:modelValue', period.value)
-            close()
-          "
+          @click="selectPeriod(period.value, close)"
         >
           {{ period.label }}
           <Icon
@@ -53,7 +50,12 @@ defineProps<{
   modelValue: string
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
+
+const selectPeriod = (value: string, close: () => void) => {
+  emit('update:modelValue', value)
+  close()
+}
 </script>

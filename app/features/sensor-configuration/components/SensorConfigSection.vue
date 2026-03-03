@@ -63,14 +63,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, toRef, onMounted, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import HardwareSensorRow from './HardwareSensorRow.vue'
 import UITag from '~/components/design-system/UITag/UITag.vue'
 import UITooltip from '~/components/design-system/UITooltip/UITooltip.vue'
 import UIPanel from '~/components/design-system/UIPanel/UIPanel.vue'
 import UITagList from '~/components/design-system/UITagList/UITagList.vue'
 import { HARDWARE_SENSORS } from '../config/hardwareSensors'
-import type { DeviceStatus, SensorDataPoint } from '~/features/modules/common/types'
 
 interface Measurement {
   key: string
@@ -89,27 +88,24 @@ interface HardwareData {
 }
 
 interface Props {
-  deviceStatus: DeviceStatus | null
-  moduleId: string
-  sensorHistoryMap?: Record<string, SensorDataPoint[]>
   dbSize?: { totalSizeBytes: number } | null
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 
-// Storage Logic (legacy kept for projections)
-const moduleIdRef = toRef(props, 'moduleId')
+import { useModuleContext } from '../../modules/common/composables/useModuleContext'
+const { deviceStatus, moduleId, sensorData: sensorHistoryMap } = useModuleContext()
 
 // Use new composable for configuration logic
 import { useSensorConfiguration } from '../composables/useSensorConfiguration'
 const { projectionsData, updateInterval, updateEnabled, fetchStorageStats } =
-  useSensorConfiguration(moduleIdRef)
+  useSensorConfiguration(moduleId)
 
 onMounted(() => {
   fetchStorageStats()
 })
 
-watch(moduleIdRef, () => {
+watch(moduleId, () => {
   fetchStorageStats()
 })
 
@@ -122,29 +118,15 @@ function formatBytes(bytes: number, decimals = 1) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
 }
 
-// Get unit for a sensor key
-const getUnit = (key: string): string => {
-  const k = key.toLowerCase()
-  if (k.includes('temp')) return '°C'
-  if (k.includes('hum')) return '%'
-  if (k.includes('pressure') || k.includes('pression')) return 'hPa'
-  if (k === 'co2' || k === 'eco2') return 'ppm'
-  if (k === 'co') return 'ppm'
-  if (k === 'tvoc') return 'ppb'
-  if (k === 'voc') return ''
-  if (k.includes('pm')) return 'µg/m³'
-  return ''
-}
-
 // Build hardware sensor list from device status AND manifest
 import { useModuleManifest } from '~/features/modules/common/module-panel/composables/useModuleManifest'
 
-const moduleType = computed(() => props.deviceStatus?.moduleType)
-const { manifest, isLoading: isManifestLoading } = useModuleManifest(moduleType)
+const moduleType = computed(() => deviceStatus.value?.moduleType)
+const { manifest } = useModuleManifest(moduleType)
 
 const hardwareSensorList = computed<HardwareData[]>(() => {
-  const sensors = props.deviceStatus?.sensors
-  const sensorsConfig = props.deviceStatus?.sensorsConfig?.sensors
+  const sensors = deviceStatus.value?.sensors
+  const sensorsConfig = deviceStatus.value?.sensorsConfig?.sensors
 
   if (!sensors) return []
 
@@ -158,18 +140,18 @@ const hardwareSensorList = computed<HardwareData[]>(() => {
   return availableHardware.map(hw => {
     // Check if we have received any sensor data yet
     const hasSensors =
-      props.deviceStatus?.sensors && Object.keys(props.deviceStatus.sensors).length > 0
+      deviceStatus.value?.sensors && Object.keys(deviceStatus.value.sensors).length > 0
 
     // Check if any measurement from this hardware exists in history
     const measurements: Measurement[] = hw.measurements.map(measureKey => {
       // 1. Try composite key (e.g. "dht22:temperature")
       const compositeKey = `${hw.hardwareKey}:${measureKey}`
-      let history = props.sensorHistoryMap?.[compositeKey]
+      let history = sensorHistoryMap.value?.[compositeKey]
 
       // 2. Fallback to simple key (e.g. "co2") if composite not found
       // This handles legacy sensors (MHZ14A, SGP40) that map to simple keys
       if ((!history || history.length === 0) && !measureKey.includes(':')) {
-        history = props.sensorHistoryMap?.[measureKey]
+        history = sensorHistoryMap.value?.[measureKey]
       }
 
       // Get latest value (assuming history is sorted ASCENDING by useModulesData)
@@ -182,7 +164,7 @@ const hardwareSensorList = computed<HardwareData[]>(() => {
 
       if (hasSensors) {
         const deviceSensor =
-          props.deviceStatus?.sensors?.[compositeKey] || props.deviceStatus?.sensors?.[measureKey]
+          deviceStatus.value?.sensors?.[compositeKey] || deviceStatus.value?.sensors?.[measureKey]
 
         if (deviceSensor && deviceSensor.status) {
           status = deviceSensor.status as 'ok' | 'missing' | 'unknown' | 'disabled'

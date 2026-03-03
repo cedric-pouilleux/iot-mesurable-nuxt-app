@@ -35,10 +35,7 @@
               ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-medium'
               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
           "
-          @click="
-            $emit('update:modelValue', '')
-            close()
-          "
+          @click="selectDirection('', close)"
         >
           <span class="flex items-center gap-2">Toutes</span>
           <Icon v-if="!modelValue" name="tabler:check" class="w-3.5 h-3.5 text-emerald-500" />
@@ -50,10 +47,7 @@
               ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-medium'
               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
           "
-          @click="
-            $emit('update:modelValue', 'OUT')
-            close()
-          "
+          @click="selectDirection('OUT', close)"
         >
           <span class="flex items-center gap-2">
             <Icon name="tabler:broadcast" class="w-3.5 h-3.5 text-orange-500" />
@@ -72,10 +66,7 @@
               ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-medium'
               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
           "
-          @click="
-            $emit('update:modelValue', 'IN')
-            close()
-          "
+          @click="selectDirection('IN', close)"
         >
           <span class="flex items-center gap-2">
             <Icon name="tabler:antenna" class="w-3.5 h-3.5 text-cyan-500" />
@@ -99,7 +90,12 @@ defineProps<{
   modelValue: '' | 'IN' | 'OUT'
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   'update:modelValue': [value: '' | 'IN' | 'OUT']
 }>()
+
+const selectDirection = (value: '' | 'IN' | 'OUT', close: () => void) => {
+  emit('update:modelValue', value)
+  close()
+}
 </script>

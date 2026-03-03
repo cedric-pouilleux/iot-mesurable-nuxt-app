@@ -64,7 +64,7 @@ export function useModuleStorage(moduleId: Ref<string>) {
             ? customEnabled.value[s.sensorType]
             : true
 
-        if (customEnabled.value?.[s.sensorType] === false) {
+        if (!isEnabled) {
           return // Skip this sensor
         }
 

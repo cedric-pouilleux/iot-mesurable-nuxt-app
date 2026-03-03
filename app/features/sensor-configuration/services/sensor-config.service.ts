@@ -1,5 +1,3 @@
-import type { SensorConfigUpdate } from '../types/sensor-configuration.types'
-
 /**
  * Service for managing sensor configuration via API
  * This is NOT a composable - it's just plain async functions
